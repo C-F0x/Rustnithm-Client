@@ -5,3 +5,11 @@ Total built with Kotlin
 [IO](https://github.com/C-F0x/Rustio)
 
 [Server](https://github.com/C-F0x/Rustnithm-Server)
+
+# Todo-list
+
+i18n
+
+Rustify net
+
+Sync with game LED
