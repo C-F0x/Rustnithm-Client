@@ -55,11 +55,13 @@ object Net {
         scope.launch {
             try {
                 sendBuffer[0] = 0xA0.toByte()
+
                 var airByte = 0
                 for (id in 1..6) {
                     if (air.contains(id)) airByte = airByte or (1 shl (8 - id))
                 }
                 sendBuffer[1] = airByte.toByte()
+
                 for (i in 2..5) sendBuffer[i] = 0
 
                 slide.forEach { id ->
