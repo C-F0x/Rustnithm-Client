@@ -256,6 +256,7 @@ fun Jour() {
                             if (!isConnected) {
                                 dataManager.updateTargetIp(tempIp)
                                 dataManager.updateTargetPort(tempPort)
+                                // 启动网络
                                 Net.start(tempIp.ifEmpty { "127.0.0.1" }, tempPort.toIntOrNull() ?: 8080)
                                 isConnected = true
                             } else {
