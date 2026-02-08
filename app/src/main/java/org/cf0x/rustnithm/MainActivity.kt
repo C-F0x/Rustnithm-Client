@@ -33,8 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cf0x.rustnithm.Data.DataManager
-import org.cf0x.rustnithm.Page.Bon
-import org.cf0x.rustnithm.Page.Jour
+import org.cf0x.rustnithm.Bon.Bon
+import org.cf0x.rustnithm.Jour.Jour
 import org.cf0x.rustnithm.Theme.RustnithmTheme
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat

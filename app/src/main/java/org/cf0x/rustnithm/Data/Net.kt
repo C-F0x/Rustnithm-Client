@@ -28,14 +28,20 @@ object Net {
         airByte: Int,
         sliderMask: Int,
         handshakePayload: Int,
-        cardBcd: ByteArray?
+        cardBcd: ByteArray?,
+        airMode: Int
     )
+    private external fun nativeMickeyButton(enabled: Int)
     fun updateConfig(ip: String, port: Int, protocolType: Int) {
         Log.d("Net", "Updating config: $ip:$port, protocol: $protocolType")
         nativeUpdateConfig(ip, port, protocolType)
     }
+    fun setMickeyState(enabled: Boolean) {
+        nativeMickeyButton(if (enabled) 1 else 0)
+    }
     fun sendFullState(
         air: Set<Int>,
+        airMode: Int,
         slide: Set<Int>,
         coin: Boolean,
         service: Boolean,
@@ -51,7 +57,7 @@ object Net {
                     val low = accessCode[i * 2 + 1].digitToInt(16)
                     bcd[i] = ((high shl 4) or low).toByte()
                 }
-                nativeUpdateState(48, 0, 0, 0, 0, bcd)
+                nativeUpdateState(48, 0, 0, 0, 0, bcd, airMode)
                 return
             } catch (e: Exception) {
                 Log.e("Net", "Access code format error: $accessCode")
@@ -63,14 +69,16 @@ object Net {
             if (coin) mask = mask or 0x01
             if (service) mask = mask or 0x02
             if (test) mask = mask or 0x04
-            nativeUpdateState(16, mask, 0, 0, 0, null)
+            nativeUpdateState(16, mask, 0, 0, 0, null, airMode)
         }
         else {
             var airByte = 0
-            for (id in air) {
-                val bitIndex = id - 1
-                if (bitIndex in 0..5) {
-                    airByte = airByte or (1 shl bitIndex)
+            if (airMode == 1) {
+                for (id in air) {
+                    val bitIndex = id - 1
+                    if (bitIndex in 0..5) {
+                        airByte = airByte or (1 shl bitIndex)
+                    }
                 }
             }
             var sliderMask = 0
@@ -80,7 +88,7 @@ object Net {
                     sliderMask = sliderMask or (1 shl adjustedId)
                 }
             }
-            nativeUpdateState(32, 0, airByte, sliderMask, 0, null)
+            nativeUpdateState(32, 0, airByte, sliderMask, 0, null, airMode)
         }
     }
 }

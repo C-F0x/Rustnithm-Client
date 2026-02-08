@@ -54,6 +54,7 @@ class DataManager(context: Context) : ViewModel() {
         val SEND_FREQUENCY = intPreferencesKey("send_frequency")
 
         val PROTOCOL_TYPE = intPreferencesKey("protocol_type")
+        val AIR_MODE = intPreferencesKey("air_mode")
     }
 
     private companion object {
@@ -66,6 +67,7 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_SEND_FREQUENCY = 500
 
         const val DEFAULT_PROTOCOL_TYPE = 0
+        const val DEFAULT_AIR_MODE = 1
     }
 
     val targetIp: StateFlow<String> = dataStore.data
@@ -114,6 +116,9 @@ class DataManager(context: Context) : ViewModel() {
     val protocolType: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.PROTOCOL_TYPE] ?: DEFAULT_PROTOCOL_TYPE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PROTOCOL_TYPE)
+    val airMode: StateFlow<Int> = dataStore.data
+        .map { preferences -> preferences[PreferenceKeys.AIR_MODE] ?: DEFAULT_AIR_MODE }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_AIR_MODE)
     fun updateBackgroundAndPalette(uri: Uri, context: Context) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
@@ -232,6 +237,13 @@ class DataManager(context: Context) : ViewModel() {
             dataStore.edit { it[PreferenceKeys.PROTOCOL_TYPE] = type }
         }
     }
+
+    fun updateAirMode(mode: Int) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.AIR_MODE] = mode }
+        }
+    }
+
     class Factory(private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
