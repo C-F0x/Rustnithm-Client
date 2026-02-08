@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,6 +59,10 @@ import org.cf0x.rustnithm.Data.Haptic
 import org.cf0x.rustnithm.Data.Net
 import org.cf0x.rustnithm.Data.TouchLogic
 import org.cf0x.rustnithm.Theme.DefaultGameSkin
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.onFocusChanged
+
+enum class ConnState { SUSPEND, WAITING, ACTIVE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,18 +86,44 @@ fun Jour() {
     val seedColorLong by dataManager.seedColor.collectAsState()
     val themeMode by dataManager.themeMode.collectAsState()
     val isVibrationEnabled by dataManager.enableVibration.collectAsState()
-    val sendFrequency by dataManager.sendFrequency.collectAsState()
+    val protocolType by dataManager.protocolType.collectAsState()
 
     val isSystemDark = isSystemInDarkTheme()
-    var isConnected by remember { mutableStateOf(false) }
+    var connState by remember { mutableStateOf(ConnState.SUSPEND) }
+
     var tempIp by remember { mutableStateOf("") }
     var tempPort by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    var isIpError by remember { mutableStateOf(false) }
+    var isPortError by remember { mutableStateOf(false) }
 
     val accessCodes by dataManager.accessCodes.collectAsState()
-
-    LaunchedEffect(savedIp, savedPort) {
-        if (tempIp.isEmpty()) tempIp = savedIp
-        if (tempPort.isEmpty()) tempPort = savedPort
+    fun checkIpValid(ip: String) = ip.isNotBlank() && ip.all { it.isDigit() || it == '.' }
+    fun checkPortValid(port: String) = port.toIntOrNull() in 0..65535
+    LaunchedEffect(Unit) {
+        while (true) {
+            val rawState = Net.nativeGetState()
+            val newState = when (rawState) {
+                1 -> ConnState.ACTIVE
+                2 -> ConnState.WAITING
+                else -> ConnState.SUSPEND
+            }
+            if (connState != newState) {
+                connState = newState
+            }
+            kotlinx.coroutines.delay(100)
+        }
+    }
+    LaunchedEffect(savedIp, savedPort, protocolType) {
+        if (tempIp.isEmpty() && savedIp.isNotEmpty()) {
+            tempIp = savedIp
+        }
+        if (tempPort.isEmpty() && savedPort.isNotEmpty()) {
+            tempPort = savedPort
+        }
+        if (checkIpValid(tempIp) && checkPortValid(tempPort)) {
+            Net.updateConfig(tempIp, tempPort.toIntOrNull() ?: 0, protocolType)
+        }
     }
 
     var activatedAir by remember { mutableStateOf(setOf<Int>()) }
@@ -114,8 +143,7 @@ fun Jour() {
         else -> isSystemDark
     }
 
-    LaunchedEffect(isConnected, activatedAir, activatedSlide, coinPressed, servicePressed, testPressed, cardPressed) {
-        if (isConnected) {
+    LaunchedEffect(connState, activatedAir, activatedSlide, coinPressed, servicePressed, testPressed, cardPressed) {
             Net.sendFullState(
                 air = activatedAir,
                 slide = activatedSlide,
@@ -125,7 +153,6 @@ fun Jour() {
                 isCardActive = cardPressed,
                 accessCode = accessCodes
             )
-        }
     }
 
     LaunchedEffect(activatedAir, activatedSlide, touchPoints) {
@@ -145,6 +172,11 @@ fun Jour() {
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 8.dp)
+            .pointerInput(Unit) {
+                detectTapGestures(onTap = {
+                    focusManager.clearFocus()
+                })
+            }
     ) {
         Box(
             modifier = Modifier
@@ -218,58 +250,150 @@ fun Jour() {
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Surface(
-                        modifier = Modifier.weight(1.2f).height(32.dp),
+                        modifier = Modifier.weight(1.0f).height(32.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        border = if (isIpError) BorderStroke(1.2.dp, MaterialTheme.colorScheme.error) else null
                     ) {
                         Box(modifier = Modifier.padding(horizontal = 10.dp), contentAlignment = Alignment.CenterStart) {
-                            if (tempIp.isEmpty()) Text("IP address", fontSize = 11.sp, color = Color.Gray)
+                            if (tempIp.isEmpty()) Text("IP", fontSize = 11.sp, color = Color.Gray)
                             BasicTextField(
                                 value = tempIp,
-                                onValueChange = { if (it.length <= 15) tempIp = it },
+                                onValueChange = {
+                                    if (connState == ConnState.SUSPEND && it.length <= 15) {
+                                        tempIp = it
+                                        isIpError = !(it.isNotBlank() && it.all { c -> c.isDigit() || c == '.' })
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusChanged { focusState ->
+                                        if (!focusState.isFocused && connState == ConnState.SUSPEND) {
+                                            if (!isIpError && tempIp.isNotBlank()) {
+                                                dataManager.updateTargetIp(tempIp)
+                                            }
+                                        }
+                                    },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                                ),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                    onDone = {
+                                        if (!isIpError && tempIp.isNotBlank()) {
+                                            dataManager.updateTargetIp(tempIp)
+                                        }
+                                        focusManager.clearFocus()
+                                    }
+                                ),
                                 singleLine = true,
-                                textStyle = TextStyle(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                                enabled = connState == ConnState.SUSPEND,
+                                textStyle = TextStyle(
+                                    fontSize = 12.sp,
+                                    color = if (connState == ConnState.SUSPEND) MaterialTheme.colorScheme.onSurface else Color.Gray
+                                )
                             )
                         }
                     }
                     Surface(
-                        modifier = Modifier.width(65.dp).height(32.dp),
+                        modifier = Modifier.width(60.dp).height(32.dp),
                         shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                        border = if (isPortError) BorderStroke(1.2.dp, MaterialTheme.colorScheme.error) else null
                     ) {
                         Box(modifier = Modifier.padding(horizontal = 8.dp), contentAlignment = Alignment.CenterStart) {
                             if (tempPort.isEmpty()) Text("Port", fontSize = 11.sp, color = Color.Gray)
                             BasicTextField(
                                 value = tempPort,
-                                onValueChange = { if (it.length <= 5) tempPort = it },
+                                onValueChange = {
+                                    if (connState == ConnState.SUSPEND && it.length <= 5) {
+                                        if (it.all { c -> c.isDigit() }) {
+                                            tempPort = it
+                                            val p = it.toIntOrNull()
+                                            isPortError = p == null || p !in 0..65535
+                                        }
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusChanged { focusState ->
+                                        if (!focusState.isFocused && !isPortError && tempPort.isNotEmpty()) {
+                                            dataManager.updateTargetPort(tempPort)
+                                        }
+                                    },
+                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Number,
+                                    imeAction = androidx.compose.ui.text.input.ImeAction.Done
+                                ),
+                                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                                    onDone = {
+                                        if (!isPortError && tempPort.isNotEmpty()) {
+                                            dataManager.updateTargetPort(tempPort)
+                                        }
+                                        focusManager.clearFocus()
+                                    }
+                                ),
                                 singleLine = true,
-                                textStyle = TextStyle(fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface)
+                                enabled = connState == ConnState.SUSPEND,
+                                textStyle = TextStyle(
+                                    fontSize = 12.sp,
+                                    color = if (connState == ConnState.SUSPEND) MaterialTheme.colorScheme.onSurface else Color.Gray
+                                )
                             )
                         }
                     }
-
-                    IconButton(
-                        modifier = Modifier.size(32.dp),
-                        onClick = {
-                            if (!isConnected) {
-                                dataManager.updateTargetIp(tempIp)
-                                dataManager.updateTargetPort(tempPort)
-                                Net.start(
-                                    ip = tempIp.ifEmpty { "127.0.0.1" },
-                                    port = tempPort.toIntOrNull() ?: 8080,
-                                    frequency = sendFrequency
-                                )
-                                isConnected = true
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(32.dp)
+                            .pointerInput(protocolType, connState) {
+                                detectTapGestures {
+                                    if (connState == ConnState.SUSPEND) {
+                                        dataManager.updateProtocolType(if (protocolType == 0) 1 else 0)
+                                    }
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (protocolType == 0) "UDP" else "TCP",
+                            fontSize = 10.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = if (connState != ConnState.SUSPEND) {
+                                Color.Gray
                             } else {
-                                Net.stop()
-                                isConnected = false
+                                if (protocolType == 0) MaterialTheme.colorScheme.primary else Color(0xFF00ACC1)
                             }
-                        }
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onTap = {
+                                        focusManager.clearFocus()
+                                        Net.nativeToggleClient()
+                                    },
+                                    onLongPress = {
+                                        focusManager.clearFocus()
+                                        Net.nativeToggleSync()
+                                    }
+                                )
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (isConnected) Icons.Default.Link else Icons.Default.LinkOff,
+                            imageVector = when(connState) {
+                                ConnState.ACTIVE -> Icons.Default.Link
+                                ConnState.WAITING -> Icons.Default.Science
+                                ConnState.SUSPEND -> Icons.Default.LinkOff
+                            },
                             contentDescription = null,
-                            tint = if (isConnected) Color(0xFF4CAF50) else MaterialTheme.colorScheme.error
+                            tint = when(connState) {
+                                ConnState.ACTIVE -> Color(0xFF4CAF50)
+                                ConnState.WAITING -> Color(0xFFFFA000)
+                                ConnState.SUSPEND -> MaterialTheme.colorScheme.error
+                            }
                         )
                     }
                 }
@@ -299,8 +423,8 @@ fun Jour() {
                             modifier = Modifier
                                 .weight(1f)
                                 .height(28.dp)
-                                .pointerInput(isConnected) {
-                                    if (isConnected) {
+                                .pointerInput(connState) {
+                                    if (connState == ConnState.ACTIVE) {
                                         detectTapGestures(
                                             onPress = {
                                                 try {
@@ -324,7 +448,7 @@ fun Jour() {
                                     shape = CircleShape
                                 ),
                             shape = CircleShape,
-                            color = if (isConnected) {
+                            color = if (connState == ConnState.ACTIVE) {
                                 MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f + glowAlpha.value * 0.4f)
                             } else Color.Transparent
                         ) {
@@ -333,7 +457,7 @@ fun Jour() {
                                     imageVector = icon,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp),
-                                    tint = if (isConnected) {
+                                    tint = if (connState == ConnState.ACTIVE) {
                                         MaterialTheme.colorScheme.onSecondaryContainer
                                     } else {
                                         Color.Gray.copy(alpha = 0.4f)

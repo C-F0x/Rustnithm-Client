@@ -52,6 +52,8 @@ class DataManager(context: Context) : ViewModel() {
         val TARGET_PORT = stringPreferencesKey("target_port")
         val ACCESS_CODES = stringPreferencesKey("access_codes")
         val SEND_FREQUENCY = intPreferencesKey("send_frequency")
+
+        val PROTOCOL_TYPE = intPreferencesKey("protocol_type")
     }
 
     private companion object {
@@ -62,6 +64,8 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_MULTI_S = 0.15f
         const val DEFAULT_SEED_COLOR = 0xFF6750A4L
         const val DEFAULT_SEND_FREQUENCY = 500
+
+        const val DEFAULT_PROTOCOL_TYPE = 0
     }
 
     val targetIp: StateFlow<String> = dataStore.data
@@ -107,6 +111,9 @@ class DataManager(context: Context) : ViewModel() {
         .map { preferences -> preferences[PreferenceKeys.ACCESS_CODES] ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val protocolType: StateFlow<Int> = dataStore.data
+        .map { preferences -> preferences[PreferenceKeys.PROTOCOL_TYPE] ?: DEFAULT_PROTOCOL_TYPE }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PROTOCOL_TYPE)
     fun updateBackgroundAndPalette(uri: Uri, context: Context) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
@@ -220,6 +227,11 @@ class DataManager(context: Context) : ViewModel() {
         }
     }
 
+    fun updateProtocolType(type: Int) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.PROTOCOL_TYPE] = type }
+        }
+    }
     class Factory(private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

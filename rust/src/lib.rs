@@ -1,112 +1,229 @@
 use jni::JNIEnv;
-use jni::objects::{JClass, JString, JByteArray};
+use jni::objects::{JClass, JString};
 use jni::sys::{jint, jbyteArray};
-use std::net::UdpSocket;
-use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::net::{UdpSocket, SocketAddr};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
 use std::time::{Duration, Instant};
 use once_cell::sync::Lazy;
 
-struct NetState {
+static STATE_VALUE: AtomicU32 = AtomicU32::new(0);
+static PROTOCOL_TYPE: AtomicU32 = AtomicU32::new(0);
+static INTERVAL_NS: AtomicU64 = AtomicU64::new(2_000_000);
+
+static TARGET_ADDR: RwLock<Option<SocketAddr>> = RwLock::new(None);
+static SOCKET_HOLDER: RwLock<Option<UdpSocket>> = RwLock::new(None);
+
+struct NetData {
     packet_type: AtomicU32,
     button_mask: AtomicU32,
     air_byte: AtomicU32,
     slider_mask: AtomicU32,
+    handshake_storage: AtomicU32,
     card_bcd: Mutex<[u8; 10]>,
+    sync_deadline: Mutex<Option<Instant>>,
+    sync_target_state: AtomicU32,
 }
 
-static STATE: Lazy<Arc<NetState>> = Lazy::new(|| Arc::new(NetState {
-    packet_type: AtomicU32::new(0),
+static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData {
+    packet_type: AtomicU32::new(16),
     button_mask: AtomicU32::new(0),
     air_byte: AtomicU32::new(0),
     slider_mask: AtomicU32::new(0),
+    handshake_storage: AtomicU32::new(0),
     card_bcd: Mutex::new([0u8; 10]),
+    sync_deadline: Mutex::new(None),
+    sync_target_state: AtomicU32::new(0),
 }));
 
-static IS_RUNNING: AtomicBool = AtomicBool::new(false);
-static INTERVAL_NS: AtomicU64 = AtomicU64::new(2_000_000);
-static PENDING_TASKS: AtomicU32 = AtomicU32::new(0);
-const MAX_PENDING: u32 = 10;
+fn start_permanent_loop() {
+    thread::Builder::new().name("RustNetEngine".into()).spawn(move || {
+        #[cfg(target_os = "android")]
+        unsafe {
+            let tid = libc::gettid();
+            let param = libc::sched_param { sched_priority: 99 };
+            libc::sched_setscheduler(tid, libc::SCHED_FIFO, &param);
+        }
 
-fn create_header(p_type: u8) -> u8 {
-    (p_type << 4) & 0b00110000 
+        let mut last_tick = Instant::now();
+        let mut recv_buf = [0u8; 2];
+
+        loop {
+            let current_state = STATE_VALUE.load(Ordering::Acquire);
+            let target_addr = TARGET_ADDR.read().unwrap().clone();
+            let socket_opt = SOCKET_HOLDER.read().unwrap();
+
+            if let (Some(addr), Some(socket)) = (target_addr, socket_opt.as_ref()) {
+                while let Ok((size, _)) = socket.recv_from(&mut recv_buf) {
+                    if size == 2 {
+                        let header = recv_buf[0];
+                        let payload = recv_buf[1];
+
+                        let is_from_server = (header >> 6) & 1 == 1;
+                        let is_handshake = (header & 0x30) == 0;
+
+                        if is_from_server && is_handshake && current_state == 2 {
+                            let server_target_confirm = (payload >> 4) & 1;
+                            let my_target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
+                            if (server_target_confirm as u32) == my_target {
+                                STATE_VALUE.store(my_target, Ordering::SeqCst);
+                                if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
+                                    *guard = None;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if current_state == 2 {
+                    if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
+                        if let Some(deadline) = *guard {
+                            if Instant::now() > deadline {
+                                let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
+                                let fallback = if target == 1 { 0 } else { 1 };
+                                STATE_VALUE.store(fallback, Ordering::SeqCst);
+                                *guard = None;
+                            }
+                        }
+                    }
+                }
+
+                let interval = Duration::from_nanos(INTERVAL_NS.load(Ordering::Acquire));
+                if last_tick.elapsed() >= interval {
+                    last_tick = Instant::now();
+                    let p_type = if current_state == 2 {
+                    } else if current_state == 1 {
+                        DATA_POOL.packet_type.load(Ordering::Relaxed)
+                    } else {
+                        99
+                    };
+
+                    if p_type == 99 { continue; }
+
+                    let mut buffer = [0u8; 11];
+                    let protocol_bit = if PROTOCOL_TYPE.load(Ordering::Relaxed) == 1 { 0x80 } else { 0x00 };
+                    let type_bits = match p_type {
+                        0 => 0b00, 16 => 0b01, 32 => 0b10, 48 => 0b11, _ => 0b01,
+                    };
+                    buffer[0] = protocol_bit | (0 << 6) | (type_bits << 4);
+
+                    let packet_len = match p_type {
+                        0 => {
+                            let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
+                            let mut p_byte = 0u8;
+                            if target == 0 { p_byte |= 1 << 7; }
+                            if target == 1 {
+                                p_byte |= 1 << 5;
+                                p_byte |= 1 << 4;
+                            } else {
+                            }
+                            buffer[1] = p_byte;
+                            2
+                        },
+                        16 => {
+                            buffer[1] = DATA_POOL.button_mask.load(Ordering::Relaxed) as u8;
+                            2
+                        },
+                        32 => {
+                            buffer[1] = DATA_POOL.air_byte.load(Ordering::Relaxed) as u8;
+                            let s_mask = DATA_POOL.slider_mask.load(Ordering::Relaxed);
+                            buffer[2..6].copy_from_slice(&s_mask.to_le_bytes());
+                            6
+                        },
+                        48 => {
+                            if let Ok(guard) = DATA_POOL.card_bcd.lock() {
+                                buffer[1..11].copy_from_slice(&*guard);
+                            }
+                            11
+                        },
+                        _ => 0,
+                    };
+
+                    if packet_len > 0 {
+                        let _ = socket.send_to(&buffer[..packet_len], &addr);
+                    }
+                }
+            } else {
+                thread::sleep(Duration::from_millis(50));
+            }
+            std::hint::spin_loop();
+        }
+    }).expect("Failed to spawn RustNetEngine");
 }
-fn run_send_loop(addr: String) {
-    let socket = match UdpSocket::bind("0.0.0.0:0") {
-        Ok(s) => {
-            s.set_nonblocking(true).unwrap();
-            s
-        },
-        Err(_) => return,
-    };
-    #[cfg(target_os = "android")]
-    unsafe {
-        let tid = libc::gettid();
-        let param = libc::sched_param { sched_priority: 99 };
-        libc::sched_setscheduler(tid, libc::SCHED_FIFO, &param);
+
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeGetState(
+    _env: JNIEnv,
+    _class: JClass,
+) -> jint {
+    STATE_VALUE.load(Ordering::Acquire) as jint
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    let current = STATE_VALUE.load(Ordering::Acquire);
+    if current == 2 { return; }
+    let next = if current == 1 { 0 } else { 1 };
+    STATE_VALUE.store(next, Ordering::SeqCst);
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleSync(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    let current = STATE_VALUE.load(Ordering::Acquire);
+    if current == 2 { return; }
+
+    let target = if current == 1 { 0 } else { 1 };
+    DATA_POOL.sync_target_state.store(target, Ordering::Relaxed);
+
+    if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
+        *guard = Some(Instant::now() + Duration::from_millis(500));
     }
 
-    let state = &*STATE;
-    let mut last_tick = Instant::now();
+    STATE_VALUE.store(2, Ordering::SeqCst);
+}
 
-    while IS_RUNNING.load(Ordering::Acquire) {
-        let interval = Duration::from_nanos(INTERVAL_NS.load(Ordering::Acquire));
-        
-        while last_tick.elapsed() < interval {
-            std::hint::spin_loop(); 
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeInit(
+    _env: JNIEnv,
+    _class: JClass,
+) {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        start_permanent_loop();
+    });
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateConfig(
+    mut env: JNIEnv,
+    _class: JClass,
+    ip: JString,
+    port: jint,
+    protocol_type: jint,
+) {
+    let ip_str: String = env.get_string(&ip).expect("Invalid IP").into();
+    let addr_str = format!("{}:{}", ip_str, port);
+
+    if let Ok(addr) = addr_str.parse::<SocketAddr>() {
+        if let Ok(mut addr_guard) = TARGET_ADDR.write() {
+            *addr_guard = Some(addr);
         }
-        last_tick = Instant::now();
-
-        if PENDING_TASKS.load(Ordering::Acquire) >= MAX_PENDING {
-            continue;
-        }
-
-        let mut buffer = [0u8; 11];
-        let mut packet_len = 0;
-        let p_type = state.packet_type.load(Ordering::Relaxed);
-
-        match p_type {
-            1 => {
-                buffer[0] = create_header(0b01);
-                buffer[1] = state.button_mask.load(Ordering::Relaxed) as u8;
-                packet_len = 2;
-            },
-            2 => {
-                buffer[0] = create_header(0b10);
-                buffer[1] = state.air_byte.load(Ordering::Relaxed) as u8;
-                let s_mask = state.slider_mask.load(Ordering::Relaxed);
-                buffer[2..6].copy_from_slice(&s_mask.to_be_bytes());
-                buffer[6] = 0;
-                packet_len = 7;
-            },
-            3 => {
-                buffer[0] = create_header(0b11);
-                if let Ok(guard) = state.card_bcd.lock() {
-                    buffer[1..11].copy_from_slice(&*guard);
-                }
-                packet_len = 11;
-            },
-            _ => continue,
-        }
-
-        if packet_len > 0 {
-            PENDING_TASKS.fetch_add(1, Ordering::SeqCst);
-            match socket.send_to(&buffer[..packet_len], &addr) {
-                Ok(_) => {
-                    PENDING_TASKS.fetch_sub(1, Ordering::SeqCst);
-                },
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                    PENDING_TASKS.fetch_sub(1, Ordering::SeqCst);
-                },
-                Err(_) => {
-                    PENDING_TASKS.fetch_sub(1, Ordering::SeqCst);
-                }
+        PROTOCOL_TYPE.store(protocol_type as u32, Ordering::SeqCst);
+        if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+            let _ = socket.set_nonblocking(true);
+            if let Ok(mut sock_guard) = SOCKET_HOLDER.write() {
+                *sock_guard = Some(socket);
             }
         }
     }
 }
-
 
 #[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateState(
@@ -116,68 +233,24 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateState(
     button_mask: jint,
     air_byte: jint,
     slider_mask: jint,
+    handshake_payload: jint,
     card_bcd: jbyteArray,
 ) {
-    let state = &*STATE;
-    state.packet_type.store(packet_type as u32, Ordering::Relaxed);
-    state.button_mask.store(button_mask as u32, Ordering::Relaxed);
-    state.air_byte.store(air_byte as u32, Ordering::Relaxed);
-    state.slider_mask.store(slider_mask as u32, Ordering::Relaxed);
+    let data = &*DATA_POOL;
+    data.packet_type.store(packet_type as u32, Ordering::Relaxed);
+    data.button_mask.store(button_mask as u32, Ordering::Relaxed);
+    data.air_byte.store(air_byte as u32, Ordering::Relaxed);
+    data.slider_mask.store(slider_mask as u32, Ordering::Relaxed);
+    data.handshake_storage.store(handshake_payload as u32, Ordering::Relaxed);
 
-    if packet_type == 3 && !card_bcd.is_null() {
-        let obj = unsafe { JByteArray::from_raw(card_bcd) };
-        if let Ok(bytes) = env.convert_byte_array(&obj) {
+    if packet_type == 48 && !card_bcd.is_null() {
+        let array_obj = unsafe { jni::objects::JByteArray::from_raw(card_bcd) };
+        if let Ok(bytes) = env.convert_byte_array(&array_obj) {
             if bytes.len() == 10 {
-                if let Ok(mut guard) = state.card_bcd.lock() {
+                if let Ok(mut guard) = data.card_bcd.lock() {
                     guard.copy_from_slice(&bytes);
                 }
             }
         }
     }
-}
-
-#[no_mangle]
-pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeStart(
-    mut env: JNIEnv,
-    _class: JClass,
-    ip: JString,
-    port: jint,
-    frequency_hz: jint,
-) {
-    if IS_RUNNING.load(Ordering::Acquire) { return; }
-
-    let ip_str: String = env.get_string(&ip).expect("Invalid IP").into();
-    let addr = format!("{}:{}", ip_str, port);
-    
-    let hz = if frequency_hz <= 0 { 500 } else { frequency_hz as u64 };
-    let interval = 1_000_000_000u64 / hz;
-    INTERVAL_NS.store(interval, Ordering::SeqCst);
-    IS_RUNNING.store(true, Ordering::SeqCst);
-
-    thread::Builder::new()
-        .name("RustNetEngine".to_string())
-        .spawn(move || {
-            run_send_loop(addr);
-        })
-        .expect("Failed to spawn thread");
-}
-
-#[no_mangle]
-pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeSetFrequency(
-    _env: JNIEnv,
-    _class: JClass,
-    frequency_hz: jint,
-) {
-    if frequency_hz > 0 {
-        let interval = 1_000_000_000u64 / (frequency_hz as u64);
-        INTERVAL_NS.store(interval, Ordering::SeqCst);
-    }
-}
-
-#[no_mangle]
-pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeStop(
-    _env: JNIEnv,
-    _class: JClass,
-) {
-    IS_RUNNING.store(false, Ordering::Release);
 }
