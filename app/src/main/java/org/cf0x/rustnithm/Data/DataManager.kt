@@ -65,9 +65,9 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_MULTI_S = 0.15f
         const val DEFAULT_SEED_COLOR = 0xFF6750A4L
         const val DEFAULT_SEND_FREQUENCY = 500
-
         const val DEFAULT_PROTOCOL_TYPE = 0
         const val DEFAULT_AIR_MODE = 1
+        const val DEFAULT_ACCESS_CODES = "12345678901234567890"
     }
 
     val targetIp: StateFlow<String> = dataStore.data
@@ -110,9 +110,8 @@ class DataManager(context: Context) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_SEED_COLOR)
 
     val accessCodes: StateFlow<String> = dataStore.data
-        .map { preferences -> preferences[PreferenceKeys.ACCESS_CODES] ?: "" }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
-
+        .map { preferences -> preferences[PreferenceKeys.ACCESS_CODES] ?: DEFAULT_ACCESS_CODES }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_ACCESS_CODES)
     val protocolType: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.PROTOCOL_TYPE] ?: DEFAULT_PROTOCOL_TYPE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PROTOCOL_TYPE)

@@ -93,10 +93,10 @@ fun JourVisual(
     onServiceChanged: (Boolean) -> Unit,
     onTestChanged: (Boolean) -> Unit,
     onCardChanged: (Boolean) -> Unit,
+    airMode: Int,
     onMickeyToggle: (Boolean) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-
     var tempIp by remember(savedIp) { mutableStateOf(savedIp) }
     var tempPort by remember(savedPort) { mutableStateOf(savedPort) }
     var isIpError by remember { mutableStateOf(false) }
@@ -107,7 +107,6 @@ fun JourVisual(
     var lastAir by remember { mutableStateOf(setOf<Int>()) }
     var lastSlide by remember { mutableStateOf(setOf<Int>()) }
 
-    var isMickeyEnabled by remember { mutableStateOf(false) }
     LaunchedEffect(activatedAir, activatedSlide, touchPoints) {
         if (isVibrationEnabled) {
             val newAir = activatedAir - lastAir
@@ -131,32 +130,55 @@ fun JourVisual(
                 })
             }
     ) {
+        val pointerMapping = remember { IntArray(10) { -1 } }
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 58.dp)
                 .onSizeChanged { containerSize = it }
-                .pointerInput(Unit) {
+                .pointerInput(airMode) { 
                     awaitEachGesture {
                         while (true) {
                             val event = awaitPointerEvent()
-                            val currentPoints = event.changes
+                            if (airMode == 2) {
+                                event.changes.forEach { change ->
+                                    val pId = change.id.hashCode()
+                                    if (change.pressed) {
+                                        var poolIdx = pointerMapping.indexOf(pId)
+                                        if (poolIdx == -1) {
+                                            poolIdx = pointerMapping.indexOf(-1)
+                                            if (poolIdx != -1) pointerMapping[poolIdx] = pId
+                                        }
+                                        if (poolIdx != -1) {
+                                            org.cf0x.rustnithm.Data.Net.nativeUpdateFlickCoords(poolIdx, change.position.y.toInt())
+                                        }
+                                    } else {
+                                        val poolIdx = pointerMapping.indexOf(pId)
+                                        if (poolIdx != -1) {
+                                            pointerMapping[poolIdx] = -1
+                                            org.cf0x.rustnithm.Data.Net.nativeUpdateFlickCoords(poolIdx, -1)
+                                        }
+                                    }
+                                }
+                            }
+                            val allCurrentPoints = event.changes
+                                .filter { it.pressed }
+                                .map { it.position }
+
+                            touchPoints = event.changes
                                 .filter { it.pressed }
                                 .associate { it.id to it.position }
-
-                            touchPoints = currentPoints
 
                             if (containerSize.width > 0 && containerSize.height > 0) {
                                 val totalW = containerSize.width.toFloat()
                                 val totalH = containerSize.height.toFloat()
                                 val airH = totalH * percentPage
                                 val slideH = totalH - airH
-
-                                val newAir = TouchLogic.getActivatedAir(currentPoints.values, airH, multiA)
-                                val newSlide = TouchLogic.getActivatedSlide(currentPoints.values, totalW, airH, slideH, multiS)
-
+                                val newAir = TouchLogic.getActivatedAir(allCurrentPoints, airH, multiA)
+                                val newSlide = TouchLogic.getActivatedSlide(allCurrentPoints, totalW, airH, slideH, multiS)
                                 onActivatedChanged(newAir, newSlide)
                             }
+                            event.changes.forEach { it.consume() }
                         }
                     }
                 }

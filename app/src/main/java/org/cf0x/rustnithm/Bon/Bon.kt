@@ -70,7 +70,6 @@ fun Bon() {
         isAccessCodeError = config.isError,
         passwordVisible = config.passwordVisible,
         frequencyValue = config.frequencyInput,
-        isFrequencyError = config.isFreqError,
         airMode = airMode,
 
         onInfoClick = { config.showInfoDialog = true },
@@ -90,7 +89,7 @@ fun Bon() {
         onImportClick = { filePickerLauncher.launch(arrayOf("application/json", "image/*")) },
         onDeleteClick = { config.resetBackground() },
         onResetAllClick = { config.showResetDialog = true },
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     )
     if (config.showColorPickerDialog) {
         ColorPickerDialog(

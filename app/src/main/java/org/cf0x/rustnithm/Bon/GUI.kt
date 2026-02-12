@@ -35,8 +35,7 @@ fun SettingsScreen(
     accessCodeValue: String,
     isAccessCodeError: Boolean,
     passwordVisible: Boolean,
-    frequencyValue: String,
-    isFrequencyError: Boolean,
+    frequencyValue: Float,
 
     onInfoClick: () -> Unit,
     onThemeChange: (Int) -> Unit,
@@ -46,7 +45,7 @@ fun SettingsScreen(
     onSensitivityAChange: (Float) -> Unit,
     onSensitivitySChange: (Float) -> Unit,
     onAirModeChange: (Int) -> Unit,
-    onFrequencyValueChange: (String) -> Unit,
+    onFrequencyValueChange: (Float) -> Unit,
     onFrequencySave: () -> Unit,
     onAccessCodeValueChange: (String) -> Unit,
     onAccessCodeToggleVisible: () -> Unit,
@@ -138,33 +137,26 @@ fun SettingsScreen(
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Transmission", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    OutlinedTextField(
+                    Text(
+                        "Transmission: ${frequencyValue.toInt()} Hz",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Slider(
                         value = frequencyValue,
                         onValueChange = onFrequencyValueChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Send Frequency (Hz)") },
-                        isError = isFrequencyError,
-                        placeholder = { Text("1-8000") },
-                        trailingIcon = {
-                            IconButton(onClick = onFrequencySave) {
-                                Icon(
-                                    imageVector = Icons.Default.Done,
-                                    contentDescription = "Save Frequency",
-                                    tint = if (isFrequencyError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        },
-                        supportingText = {
-                            if (isFrequencyError) {
-                                Text("Please enter a valid number (1-8000)", color = MaterialTheme.colorScheme.error)
-                            } else {
-                                Text("Higher frequency reduces latency but increases CPU load.", style = MaterialTheme.typography.bodySmall)
-                            }
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        onValueChangeFinished = { onFrequencySave() },
+                        valueRange = 50f..1000f,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Text(
+                        "Higher frequency reduces latency but increases CPU load.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

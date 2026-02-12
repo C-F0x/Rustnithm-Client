@@ -51,7 +51,6 @@ fun Jour() {
     var servicePressed by remember { mutableStateOf(false) }
     var testPressed by remember { mutableStateOf(false) }
     var cardPressed by remember { mutableStateOf(false) }
-
     var lastAir by remember { mutableStateOf(setOf<Int>()) }
     var lastSlide by remember { mutableStateOf(setOf<Int>()) }
 
@@ -123,6 +122,7 @@ fun Jour() {
         isVibrationEnabled = isVibrationEnabled,
         haptic = haptic,
         focusManager = focusManager,
+        airMode = airMode,
 
         onActivatedChanged = { air, slide ->
             activatedAir = air

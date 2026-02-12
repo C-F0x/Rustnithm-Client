@@ -3,6 +3,7 @@ package org.cf0x.rustnithm.Bon
 import android.content.Context
 import android.net.Uri
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -35,12 +36,11 @@ class BonViewModel(
     var showInfoDialog by mutableStateOf(false)
     var showResetDialog by mutableStateOf(false)
 
-    var frequencyInput by mutableStateOf("")
-    var isFreqError by mutableStateOf(false)
+    var frequencyInput by mutableFloatStateOf(50f)
 
     fun initStates(currentAccessCodes: String, currentFrequency: Int) {
         textFieldValue = currentAccessCodes
-        frequencyInput = if (currentFrequency == 0) "" else currentFrequency.toString()
+        frequencyInput = currentFrequency.coerceIn(50, 1000).toFloat()
     }
 
     fun updateTheme(index: Int) = dataManager.updateThemeMode(index)
@@ -70,13 +70,8 @@ class BonViewModel(
     }
 
     fun saveFrequency() {
-        val freq = frequencyInput.toIntOrNull()
-        if (freq != null && freq in 1..8000) {
-            isFreqError = false
-            dataManager.updateSendFrequency(freq)
-        } else {
-            isFreqError = true
-        }
+        val freq = frequencyInput.toInt()
+        dataManager.updateSendFrequency(freq)
     }
 
     fun handleImport(uri: Uri) {

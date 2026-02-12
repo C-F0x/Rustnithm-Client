@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
+import org.cf0x.rustnithm.Data.Net
 import kotlin.math.abs
 
 @Composable
@@ -45,6 +46,7 @@ fun AirContent(
     val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
     val multiA by dataManager.multiA.collectAsState()
     val isVibrationEnabled by dataManager.enableVibration.collectAsState()
+    val airMode by dataManager.airMode.collectAsState()
 
     val haptic = remember { Haptic.getInstance() }
 
@@ -91,15 +93,26 @@ fun AirContent(
             }
             .pointerInput(Unit) {
                 awaitEachGesture {
-                    awaitFirstDown()
+                    val down = awaitFirstDown()
+                    val downId = down.id.value.toInt()
+                    if (airMode == 2) {
+                        Net.onTouchDown(downId, down.position.y)
+                    }
+
                     do {
                         val event = awaitPointerEvent()
                         val newPoints = mutableMapOf<PointerId, Offset>()
 
                         event.changes.forEach { change ->
+                            val pid = change.id.value.toInt()
                             if (change.pressed) {
                                 val currentPos = change.position
                                 newPoints[change.id] = currentPos
+
+                                if (airMode == 2) {
+                                    Net.onTouchMove(pid, currentPos.y)
+                                }
+
                                 if (isVibrationEnabled) {
                                     val prevPos = change.previousPosition
                                     val diff = abs(currentPos.x - prevPos.x) + abs(currentPos.y - prevPos.y)
@@ -107,10 +120,18 @@ fun AirContent(
                                         haptic.onMoveSimulated()
                                     }
                                 }
+                            } else if (change.previousPressed && !change.pressed) {
+                                if (airMode == 2) {
+                                    Net.onTouchUp(pid)
+                                }
                             }
                         }
                         touchPoints = newPoints
                     } while (event.changes.any { it.pressed })
+
+                    touchPoints.keys.forEach {
+                        if (airMode == 2) Net.onTouchUp(it.value.toInt())
+                    }
                     touchPoints = emptyMap()
                     lastActivated = emptySet()
                 }
@@ -166,7 +187,7 @@ fun calculateActivatedRegions(
         val irStart = i * airHeight
         val irEnd = (i + 1) * airHeight
 
-        if (yFromBottom >= irStart && yFromBottom < irEnd) {
+        if (yFromBottom in irStart..<irEnd) {
             if (i > 0 && yFromBottom < (irStart + pairHeight)) activated.add(i)
             if (i < (numRegions - 1) && yFromBottom > (irEnd - pairHeight)) activated.add(i + 2)
             activated.add(i + 1)
