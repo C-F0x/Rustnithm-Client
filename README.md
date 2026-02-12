@@ -6,16 +6,25 @@ Total built with Kotlin
 
 [Server](https://github.com/C-F0x/Rustnithm-Server)
 
+
+# Bug
+
+ToggleSync doesnt work
+
+
+MickeyButton might get err, double click to fix it
+
+
 # Todo-list
 
 i18n
 
 Sync with game LED
 
-Q&A
+# Q&A
 
 Q:Support ios when?
 
-A:Wen i got macmini4&ipadpro, lmao
+A:Wen i got macmini4 & ipadpro, lmao
 might turnt to kotlin multiplatform
 
