@@ -23,8 +23,8 @@ configure<ApplicationExtension> {
         applicationId = "org.cf0x.rustnithm"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = SimpleDateFormat("yyMM00").format(Date()).toInt()
-        versionName = SimpleDateFormat("yy.MM.00").format(Date())
+        versionCode = SimpleDateFormat("yyMM10").format(Date()).toInt()
+        versionName = SimpleDateFormat("yy.MM.10").format(Date())
 
         ndk {
             abiFilters.add("arm64-v8a")
