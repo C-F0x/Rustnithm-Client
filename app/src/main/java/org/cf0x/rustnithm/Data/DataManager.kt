@@ -70,6 +70,16 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_ACCESS_CODES = "12345678901234567890"
     }
 
+    init {
+        viewModelScope.launch {
+            dataStore.data.map { preferences ->
+                preferences[PreferenceKeys.SEND_FREQUENCY] ?: DEFAULT_SEND_FREQUENCY
+            }.collect { frequency ->
+                Net.initEngine(frequency)
+            }
+        }
+    }
+
     val targetIp: StateFlow<String> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.TARGET_IP] ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")

@@ -12,7 +12,7 @@ use once_cell::sync::Lazy;
 
 pub(crate) static STATE_VALUE: AtomicU32 = AtomicU32::new(0);
 pub(crate) static PROTOCOL_TYPE: AtomicU32 = AtomicU32::new(0);
-pub(crate) static INTERVAL_NS: AtomicU64 = AtomicU64::new(2_000_000);
+pub(crate) static INTERVAL_NS: AtomicU64 = AtomicU64::new(1_000_000);
 
 pub(crate) static TARGET_ADDR: RwLock<Option<SocketAddr>> = RwLock::new(None);
 pub(crate) static SOCKET_HOLDER: RwLock<Option<UdpSocket>> = RwLock::new(None);
@@ -68,24 +68,24 @@ fn start_permanent_loop() {
 
             if let (Some(addr), Some(socket)) = (target_addr, socket_opt.as_ref()) {
 
-            if last_flick_sample.elapsed() >= flick_interval {
-                last_flick_sample = Instant::now();
-                air::process_flick_sampling();
-            }
-                
-            while let Ok((size, _)) = socket.recv_from(&mut recv_buf) {
-                if size == 2 {
-                    let header = recv_buf[0];
-                    let payload = recv_buf[1];
-                    if (header >> 6) & 1 == 1 && (header & 0x30) == 0 && current_state == 2 {
-                        let server_confirm = (payload >> 4) & 1;
-                        if (server_confirm as u32) == DATA_POOL.sync_target_state.load(Ordering::Relaxed) {
-                            STATE_VALUE.store(server_confirm as u32, Ordering::SeqCst);
-                            if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() { *guard = None; }
+                if last_flick_sample.elapsed() >= flick_interval {
+                    last_flick_sample = Instant::now();
+                    air::process_flick_sampling();
+                }
+
+                while let Ok((size, _)) = socket.recv_from(&mut recv_buf) {
+                    if size == 2 {
+                        let header = recv_buf[0];
+                        let payload = recv_buf[1];
+                        if (header >> 6) & 1 == 1 && (header & 0x30) == 0 && current_state == 2 {
+                            let server_confirm = (payload >> 4) & 1;
+                            if (server_confirm as u32) == DATA_POOL.sync_target_state.load(Ordering::Relaxed) {
+                                STATE_VALUE.store(server_confirm as u32, Ordering::SeqCst);
+                                if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() { *guard = None; }
+                            }
                         }
                     }
                 }
-            }
 
                 if current_state == 2 {
                     if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
@@ -152,7 +152,6 @@ fn start_permanent_loop() {
     }).expect("Failed to spawn RustNetEngine");
 }
 
-
 #[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeTouchDown(_env: JNIEnv, _class: JClass, pid: jint, y: jint) {
     air::update_touch_down(pid, y as f32);
@@ -192,7 +191,10 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleSync(_env: J
 }
 
 #[no_mangle]
-pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeInit(_env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeInit(_env: JNIEnv, _class: JClass, freq: jint) {
+    let ns = 1_000_000_000 / (freq.max(1) as u64);
+    INTERVAL_NS.store(ns, Ordering::SeqCst);
+
     static ONCE: std::sync::Once = std::sync::Once::new();
     ONCE.call_once(start_permanent_loop);
 }

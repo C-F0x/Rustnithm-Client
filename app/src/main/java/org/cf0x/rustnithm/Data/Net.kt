@@ -3,26 +3,25 @@ package org.cf0x.rustnithm.Data
 import android.util.Log
 
 object Net {
-    const val STATE_SUSPEND = 0
-    const val STATE_ACTIVE = 1
-    const val STATE_WAITING = 2
 
-    init {
-        try {
-            System.loadLibrary("rustnithm")
-            nativeInit()
-            Log.d("Net", "Rustnithm engine initialized.")
-        } catch (e: UnsatisfiedLinkError) {
-            Log.e("Net", "Failed to load rustnithm library", e)
+    private var isLibraryLoaded = false
+
+    private fun loadLibrary() {
+        if (!isLibraryLoaded) {
+            try {
+                System.loadLibrary("rustnithm")
+                isLibraryLoaded = true
+            } catch (e: UnsatisfiedLinkError) {
+                Log.e("Net", "Failed to load rustnithm library", e)
+            }
         }
     }
 
-    private external fun nativeInit()
+    private external fun nativeInit(frequency: Int)
     private external fun nativeUpdateConfig(ip: String, port: Int, protocolType: Int)
     external fun nativeGetState(): Int
     external fun nativeToggleClient()
     external fun nativeToggleSync()
-
     external fun nativeUpdateFlickCoords(index: Int, y: Int)
     external fun nativeTouchDown(pid: Int, y: Int)
     external fun nativeTouchUp(pid: Int)
@@ -39,24 +38,41 @@ object Net {
 
     private external fun nativeMickeyButton(enabled: Int)
 
+    fun initEngine(frequency: Int) {
+        try {
+            loadLibrary()
+            if (isLibraryLoaded) {
+                nativeInit(frequency)
+                Log.d("Net", "Rustnithm engine initialized with frequency: $frequency Hz")
+            }
+        } catch (e: Exception) {
+            Log.e("Net", "Init failed", e)
+        }
+    }
+
     fun updateConfig(ip: String, port: Int, protocolType: Int) {
-        nativeUpdateConfig(ip, port, protocolType)
+        loadLibrary()
+        if (isLibraryLoaded) nativeUpdateConfig(ip, port, protocolType)
     }
 
     fun setMickeyState(enabled: Boolean) {
-        nativeMickeyButton(if (enabled) 1 else 0)
+        loadLibrary()
+        if (isLibraryLoaded) nativeMickeyButton(if (enabled) 1 else 0)
     }
 
     fun onTouchDown(pid: Int, y: Float) {
-        nativeTouchDown(pid, y.toInt())
+        loadLibrary()
+        if (isLibraryLoaded) nativeTouchDown(pid, y.toInt())
     }
 
     fun onTouchMove(pid: Int, y: Float) {
-        nativeUpdateFlickCoords(pid, y.toInt())
+        loadLibrary()
+        if (isLibraryLoaded) nativeUpdateFlickCoords(pid, y.toInt())
     }
 
     fun onTouchUp(pid: Int) {
-        nativeTouchUp(pid)
+        loadLibrary()
+        if (isLibraryLoaded) nativeTouchUp(pid)
     }
 
     fun sendFullState(
@@ -69,6 +85,9 @@ object Net {
         isCardActive: Boolean,
         accessCode: String
     ) {
+        loadLibrary()
+        if (!isLibraryLoaded) return
+
         if (isCardActive && accessCode.length == 20) {
             val bcd = ByteArray(10)
             try {
@@ -79,7 +98,7 @@ object Net {
                 }
                 nativeUpdateState(48, 0, 0, 0, 0, bcd, airMode)
                 return
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Log.e("Net", "Access code format error")
             }
         }
