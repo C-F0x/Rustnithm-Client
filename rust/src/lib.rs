@@ -1,4 +1,6 @@
 mod air;
+mod pulse;
+mod delivery;
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
@@ -17,8 +19,6 @@ pub(crate) static INTERVAL_NS: AtomicU64 = AtomicU64::new(1_000_000);
 pub(crate) static TARGET_ADDR: RwLock<Option<SocketAddr>> = RwLock::new(None);
 pub(crate) static SOCKET_HOLDER: RwLock<Option<UdpSocket>> = RwLock::new(None);
 
-pub(crate) static LIVE_TOUCH_Y: RwLock<[f32; 10]> = RwLock::new([0.0; 10]);
-
 pub(crate) struct NetData {
     pub packet_type: AtomicU32,
     pub button_mask: AtomicU32,
@@ -30,6 +30,7 @@ pub(crate) struct NetData {
     pub sync_target_state: AtomicU32,
     pub air_mode: AtomicU32,
     pub mickey: AtomicU32,
+    pub flick_signal: AtomicU32,
 }
 
 pub(crate) static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData {
@@ -43,6 +44,7 @@ pub(crate) static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData 
     sync_target_state: AtomicU32::new(0),
     air_mode: AtomicU32::new(1),
     mickey: AtomicU32::new(0),
+    flick_signal: AtomicU32::new(0),
 }));
 
 fn start_permanent_loop() {
@@ -58,9 +60,6 @@ fn start_permanent_loop() {
         let mut last_flick_sample = Instant::now();
         let flick_interval = Duration::from_micros(1600); 
 
-        let mut mickey_frame: u32 = 0;
-        let mut recv_buf = [0u8; 2];
-
         loop {
             let current_state = STATE_VALUE.load(Ordering::Acquire);
             let target_addr = TARGET_ADDR.read().unwrap().clone();
@@ -73,76 +72,16 @@ fn start_permanent_loop() {
                     air::process_flick_sampling();
                 }
 
-                while let Ok((size, _)) = socket.recv_from(&mut recv_buf) {
-                    if size == 2 {
-                        let header = recv_buf[0];
-                        let payload = recv_buf[1];
-                        if (header >> 6) & 1 == 1 && (header & 0x30) == 0 && current_state == 2 {
-                            let server_confirm = (payload >> 4) & 1;
-                            if (server_confirm as u32) == DATA_POOL.sync_target_state.load(Ordering::Relaxed) {
-                                STATE_VALUE.store(server_confirm as u32, Ordering::SeqCst);
-                                if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() { *guard = None; }
-                            }
-                        }
-                    }
-                }
+                delivery::handle_receive(socket, current_state);
 
                 if current_state == 2 {
-                    if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
-                        if let Some(deadline) = *guard {
-                            if Instant::now() > deadline {
-                                let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
-                                STATE_VALUE.store(if target == 1 { 0 } else { 1 }, Ordering::SeqCst);
-                                *guard = None;
-                            }
-                        }
-                    }
+                    delivery::handle_sync_timeout();
                 }
 
                 let interval = Duration::from_nanos(INTERVAL_NS.load(Ordering::Acquire));
                 if last_tick.elapsed() >= interval {
                     last_tick = Instant::now();
-                    let p_type = if current_state == 2 { 0 } else if current_state == 1 {
-                        DATA_POOL.packet_type.load(Ordering::Relaxed)
-                    } else { 99 };
-
-                    if p_type == 99 { continue; }
-
-                    let mut buffer = [0u8; 11];
-                    let protocol_bit = if PROTOCOL_TYPE.load(Ordering::Relaxed) == 1 { 0x80 } else { 0x00 };
-                    let type_bits = match p_type {
-                        0 => 0b00, 16 => 0b01, 32 => 0b10, 48 => 0b11, _ => 0b01,
-                    };
-                    buffer[0] = protocol_bit | (0 << 6) | (type_bits << 4);
-
-                    let packet_len = match p_type {
-                        0 => {
-                            let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
-                            buffer[1] = if target == 0 { 1 << 7 } else { (1 << 5) | (1 << 4) };
-                            2
-                        },
-                        16 => {
-                            buffer[1] = DATA_POOL.button_mask.load(Ordering::Relaxed) as u8;
-                            2
-                        },
-                        32 => {
-                            buffer[1] = air::get_air_packet(&mut mickey_frame);
-                            let s_mask = DATA_POOL.slider_mask.load(Ordering::Relaxed);
-                            buffer[2..6].copy_from_slice(&s_mask.to_le_bytes());
-                            6
-                        },
-                        48 => {
-                            if let Ok(guard) = DATA_POOL.card_bcd.lock() {
-                                buffer[1..11].copy_from_slice(&*guard);
-                            }
-                            11
-                        },
-                        _ => 0,
-                    };
-
-                    if packet_len > 0 {
-                        let _ = socket.send_to(&buffer[..packet_len], &addr);
-                    }
+                    delivery::send_packet(socket, &addr, current_state);
                 }
             } else {
                 thread::sleep(Duration::from_millis(50));
@@ -165,6 +104,11 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeTouchUp(_env: JNIE
 #[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateFlickCoords(_env: JNIEnv, _class: JClass, pid: jint, y: jint) {
     air::update_touch_move(pid, y as f32);
+}
+
+#[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeTriggerFlick(_env: JNIEnv, _class: JClass) {
+    DATA_POOL.flick_signal.store(1, Ordering::SeqCst);
 }
 
 #[no_mangle]
@@ -222,7 +166,6 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateState(env: J
     let data = &*DATA_POOL;
     data.packet_type.store(packet_type as u32, Ordering::Relaxed);
     data.button_mask.store(button_mask as u32, Ordering::Relaxed);
-
     data.air_byte.store(_air_byte as u32, Ordering::Relaxed);
     data.slider_mask.store(slider_mask as u32, Ordering::Relaxed);
     data.handshake_storage.store(handshake_payload as u32, Ordering::Relaxed);

@@ -29,31 +29,40 @@ class BonViewModel(
     val accessCodes: StateFlow<String> = dataManager.accessCodes
     val sendFrequency: StateFlow<Int> = dataManager.sendFrequency
 
+    val flickThreshold: StateFlow<Int> = dataManager.flickThreshold
+    val flickEqualizerPlus: StateFlow<Int> = dataManager.flickEqualizerPlus
+    val flickEqualizerMinus: StateFlow<Int> = dataManager.flickEqualizerMinus
+    val flickUp: StateFlow<Int> = dataManager.flickUp
+    val flickDown: StateFlow<Int> = dataManager.flickDown
+    val flickZoneNum: StateFlow<Int> = dataManager.flickZoneNum
+
     var textFieldValue by mutableStateOf("")
     var isError by mutableStateOf(false)
     var passwordVisible by mutableStateOf(false)
     var showColorPickerDialog by mutableStateOf(false)
     var showInfoDialog by mutableStateOf(false)
     var showResetDialog by mutableStateOf(false)
-
-    var frequencyInput by mutableFloatStateOf(50f)
+    var frequencyInput by mutableFloatStateOf(500f)
 
     fun initStates(currentAccessCodes: String, currentFrequency: Int) {
         textFieldValue = currentAccessCodes
-        frequencyInput = currentFrequency.coerceIn(50, 1000).toFloat()
+        frequencyInput = currentFrequency.toFloat()
     }
 
     fun updateTheme(index: Int) = dataManager.updateThemeMode(index)
-
     fun updateSeedColor(color: Long) = dataManager.updateSeedColor(color)
-
     fun updatePercent(value: Float) = dataManager.updatePercentPage(value)
-
     fun updateSensitivityA(value: Float) = dataManager.updateMultiA(value)
-
     fun updateSensitivityS(value: Float) = dataManager.updateMultiS(value)
-
     fun updateAirMode(value: Int) = dataManager.updateAirMode(value)
+
+    fun updateFlickThreshold(value: Int) = dataManager.updateFlickThreshold(value)
+    fun updateFlickEqualizerPlus(value: Int) = dataManager.updateFlickEqualizerPlus(value)
+    fun updateFlickEqualizerMinus(value: Int) = dataManager.updateFlickEqualizerMinus(value)
+    fun updateFlickUp(value: Int) = dataManager.updateFlickUp(value)
+    fun updateFlickDown(value: Int) = dataManager.updateFlickDown(value)
+    fun updateFlickZoneNum(value: Int) = dataManager.updateFlickZoneNum(value)
+
     fun toggleVibration(enabled: Boolean) {
         dataManager.updateEnableVibration(enabled)
         if (!enabled) haptic.stop()
@@ -70,8 +79,7 @@ class BonViewModel(
     }
 
     fun saveFrequency() {
-        val freq = frequencyInput.toInt()
-        dataManager.updateSendFrequency(freq)
+        dataManager.updateSendFrequency(frequencyInput.toInt())
     }
 
     fun handleImport(uri: Uri) {

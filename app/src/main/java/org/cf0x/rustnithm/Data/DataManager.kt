@@ -52,9 +52,14 @@ class DataManager(context: Context) : ViewModel() {
         val TARGET_PORT = stringPreferencesKey("target_port")
         val ACCESS_CODES = stringPreferencesKey("access_codes")
         val SEND_FREQUENCY = intPreferencesKey("send_frequency")
-
         val PROTOCOL_TYPE = intPreferencesKey("protocol_type")
         val AIR_MODE = intPreferencesKey("air_mode")
+        val FLICK_THRESHOLD = intPreferencesKey("flick_threshold")
+        val FLICK_EQUALIZER_PLUS = intPreferencesKey("flick_equalizer_plus")
+        val FLICK_EQUALIZER_MINUS = intPreferencesKey("flick_equalizer_minus")
+        val FLICK_UP = intPreferencesKey("flick_up")
+        val FLICK_DOWN = intPreferencesKey("flick_down")
+        val FLICK_ZONE_NUM = intPreferencesKey("flick_zone_num")
     }
 
     private companion object {
@@ -68,6 +73,12 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_PROTOCOL_TYPE = 0
         const val DEFAULT_AIR_MODE = 1
         const val DEFAULT_ACCESS_CODES = "12345678901234567890"
+        const val DEFAULT_FLICK_THRESHOLD = 80
+        const val DEFAULT_FLICK_EQUALIZER_PLUS = 10
+        const val DEFAULT_FLICK_EQUALIZER_MINUS = 10
+        const val DEFAULT_FLICK_UP = 10
+        const val DEFAULT_FLICK_DOWN = 10
+        const val DEFAULT_FLICK_ZONE_NUM = 32
     }
 
     init {
@@ -128,6 +139,29 @@ class DataManager(context: Context) : ViewModel() {
     val airMode: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.AIR_MODE] ?: DEFAULT_AIR_MODE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_AIR_MODE)
+    val flickThreshold: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_THRESHOLD] ?: DEFAULT_FLICK_THRESHOLD }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_THRESHOLD)
+
+    val flickEqualizerPlus: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_EQUALIZER_PLUS] ?: DEFAULT_FLICK_EQUALIZER_PLUS }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_EQUALIZER_PLUS)
+
+    val flickEqualizerMinus: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_EQUALIZER_MINUS] ?: DEFAULT_FLICK_EQUALIZER_MINUS }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_EQUALIZER_MINUS)
+
+    val flickUp: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_UP] ?: DEFAULT_FLICK_UP }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_UP)
+
+    val flickDown: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_DOWN] ?: DEFAULT_FLICK_DOWN }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_DOWN)
+
+    val flickZoneNum: StateFlow<Int> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_ZONE_NUM] ?: DEFAULT_FLICK_ZONE_NUM }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_ZONE_NUM)
     fun updateBackgroundAndPalette(uri: Uri, context: Context) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
@@ -252,7 +286,28 @@ class DataManager(context: Context) : ViewModel() {
             dataStore.edit { it[PreferenceKeys.AIR_MODE] = mode }
         }
     }
+    fun updateFlickThreshold(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_THRESHOLD] = value } }
+    }
+    fun updateFlickEqualizerPlus(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_EQUALIZER_PLUS] = value } }
+    }
 
+    fun updateFlickEqualizerMinus(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_EQUALIZER_MINUS] = value } }
+    }
+
+    fun updateFlickUp(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_UP] = value } }
+    }
+
+    fun updateFlickDown(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_DOWN] = value } }
+    }
+
+    fun updateFlickZoneNum(value: Int) {
+        viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_ZONE_NUM] = value } }
+    }
     class Factory(private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {

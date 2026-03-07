@@ -37,6 +37,13 @@ fun SettingsScreen(
     passwordVisible: Boolean,
     frequencyValue: Float,
 
+    flickThreshold: Int,
+    flickEqualizerPlus: Int,
+    flickEqualizerMinus: Int,
+    flickUp: Int,
+    flickDown: Int,
+    flickZoneNum: Int,
+
     onInfoClick: () -> Unit,
     onThemeChange: (Int) -> Unit,
     onColorPickerOpen: () -> Unit,
@@ -55,8 +62,22 @@ fun SettingsScreen(
     onDeleteClick: () -> Unit,
     onResetAllClick: () -> Unit,
 
+    onFlickThresholdChange: (Int) -> Unit,
+    onFlickEqualizerPlusChange: (Int) -> Unit,
+    onFlickEqualizerMinusChange: (Int) -> Unit,
+    onFlickUpChange: (Int) -> Unit,
+    onFlickDownChange: (Int) -> Unit,
+    onFlickZoneNumChange: (Int) -> Unit,
+
     contentPadding: PaddingValues
 ) {
+    var internalThreshold by remember(flickThreshold) { mutableFloatStateOf(flickThreshold.toFloat()) }
+    var internalEqualizerPlus by remember(flickEqualizerPlus) { mutableFloatStateOf(flickEqualizerPlus.toFloat()) }
+    var internalEqualizerMinus by remember(flickEqualizerMinus) { mutableFloatStateOf(flickEqualizerMinus.toFloat()) }
+    var internalUp by remember(flickUp) { mutableFloatStateOf(flickUp.toFloat()) }
+    var internalDown by remember(flickDown) { mutableFloatStateOf(flickDown.toFloat()) }
+    var internalZone by remember(flickZoneNum) { mutableFloatStateOf(flickZoneNum.toFloat()) }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding,
@@ -101,7 +122,6 @@ fun SettingsScreen(
                 }
             }
         }
-
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -142,9 +162,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Slider(
                         value = frequencyValue,
                         onValueChange = onFrequencyValueChange,
@@ -152,11 +170,92 @@ fun SettingsScreen(
                         valueRange = 50f..1000f,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
+            }
+        }
 
-                    Text(
-                        "Higher frequency reduces latency but increases CPU load.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Flick Physics (Advanced)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text("Trigger Threshold: $flickThreshold", style = MaterialTheme.typography.labelMedium)
+                    Slider(
+                        value = internalThreshold,
+                        onValueChange = {
+                            internalThreshold = it
+                            onFlickThresholdChange(it.roundToInt())
+                        },
+                        valueRange = 1f..160f,
+                        steps = 159
+                    )
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Equalizer +: $flickEqualizerPlus", style = MaterialTheme.typography.labelSmall)
+                            Slider(
+                                value = internalEqualizerPlus,
+                                onValueChange = {
+                                    internalEqualizerPlus = it
+                                    onFlickEqualizerPlusChange(it.roundToInt())
+                                },
+                                valueRange = 1f..20f,
+                                steps = 19
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Equalizer -: $flickEqualizerMinus", style = MaterialTheme.typography.labelSmall)
+                            Slider(
+                                value = internalEqualizerMinus,
+                                onValueChange = {
+                                    internalEqualizerMinus = it
+                                    onFlickEqualizerMinusChange(it.roundToInt())
+                                },
+                                valueRange = 1f..20f,
+                                steps = 19
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Step Up: $flickUp", style = MaterialTheme.typography.labelSmall)
+                            Slider(
+                                value = internalUp,
+                                onValueChange = {
+                                    internalUp = it
+                                    onFlickUpChange(it.roundToInt())
+                                },
+                                valueRange = 1f..40f,
+                                steps = 39
+                            )
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Step Down: $flickDown", style = MaterialTheme.typography.labelSmall)
+                            Slider(
+                                value = internalDown,
+                                onValueChange = {
+                                    internalDown = it
+                                    onFlickDownChange(it.roundToInt())
+                                },
+                                valueRange = 1f..40f,
+                                steps = 39
+                            )
+                        }
+                    }
+
+                    Text("Flick Zones: $flickZoneNum", style = MaterialTheme.typography.labelMedium)
+                    Slider(
+                        value = internalZone,
+                        onValueChange = {
+                            internalZone = it
+                            onFlickZoneNumChange(it.roundToInt())
+                        },
+                        valueRange = 4f..64f,
+                        steps = 60
                     )
                 }
             }
@@ -183,20 +282,7 @@ fun SettingsScreen(
                                     )
                                 }
                                 IconButton(onClick = onAccessCodeSave) {
-                                    Icon(
-                                        imageVector = Icons.Default.Done,
-                                        contentDescription = "Save",
-                                        tint = if (isAccessCodeError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-                        },
-                        supportingText = {
-                            if (isAccessCodeError) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Must be exactly 20 digits", color = MaterialTheme.colorScheme.error)
+                                    Icon(imageVector = Icons.Default.Done, contentDescription = "Save")
                                 }
                             }
                         },
@@ -217,11 +303,9 @@ fun SettingsScreen(
                 )
             }
         }
+
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onImportClick, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.Share, null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -229,11 +313,9 @@ fun SettingsScreen(
                 }
                 OutlinedButton(
                     onClick = onDeleteClick,
-                    modifier = Modifier.wrapContentSize(),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
                     Icon(Icons.Default.Delete, null)
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text("Delete")
                 }
             }

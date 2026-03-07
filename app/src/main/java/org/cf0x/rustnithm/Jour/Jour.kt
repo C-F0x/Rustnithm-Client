@@ -15,8 +15,10 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
+import org.cf0x.rustnithm.Emu.TankRush
 
 enum class ConnState { SUSPEND, WAITING, ACTIVE }
+
 @Composable
 fun Jour() {
     val context = LocalContext.current
@@ -40,6 +42,12 @@ fun Jour() {
     val protocolType by dataManager.protocolType.collectAsState()
     val airMode by dataManager.airMode.collectAsState()
     val accessCodes by dataManager.accessCodes.collectAsState()
+    val flickThreshold by dataManager.flickThreshold.collectAsState()
+    val flickEqualizerPlus by dataManager.flickEqualizerPlus.collectAsState()
+    val flickEqualizerMinus by dataManager.flickEqualizerMinus.collectAsState()
+    val flickUp by dataManager.flickUp.collectAsState()
+    val flickDown by dataManager.flickDown.collectAsState()
+    val flickZoneNum by dataManager.flickZoneNum.collectAsState()
 
     val focusManager = LocalFocusManager.current
     val isSystemDark = isSystemInDarkTheme()
@@ -66,6 +74,14 @@ fun Jour() {
         }
     }
 
+    LaunchedEffect(connState) {
+        if (connState != ConnState.SUSPEND) {
+            TankRush.start(dataManager)
+        } else {
+            TankRush.stop()
+        }
+    }
+
     LaunchedEffect(savedIp, savedPort, protocolType) {
         if (savedIp.isNotEmpty() && savedPort.isNotEmpty()) {
             val port = savedPort.toIntOrNull() ?: 0
@@ -74,7 +90,6 @@ fun Jour() {
             }
         }
     }
-
 
     LaunchedEffect(connState, activatedAir, activatedSlide, coinPressed, servicePressed, testPressed, cardPressed) {
         JourBackend.sendGameState(
@@ -123,6 +138,12 @@ fun Jour() {
         haptic = haptic,
         focusManager = focusManager,
         airMode = airMode,
+        flickZoneNum = flickZoneNum,
+        flickThreshold = flickThreshold,
+        flickEqualizerPlus = flickEqualizerPlus,
+        flickEqualizerMinus = flickEqualizerMinus,
+        flickUp = flickUp,
+        flickDown = flickDown,
 
         onActivatedChanged = { air, slide ->
             activatedAir = air

@@ -4,7 +4,14 @@ import androidx.compose.ui.geometry.Offset
 
 object TouchLogic {
 
-    fun getActivatedAir(touches: Collection<Offset>, airAreaHeight: Float, multiA: Float): Set<Int> {
+    fun getActivatedAir(
+        touches: Collection<Offset>,
+        airAreaHeight: Float,
+        multiA: Float,
+        airMode: Int
+    ): Set<Int> {
+        if (airMode != 1) return emptySet()
+
         val activated = mutableSetOf<Int>()
         val singleAirHeight = airAreaHeight / 6
         val pairHeight = (singleAirHeight * multiA).coerceIn(0f, singleAirHeight / 2f)
@@ -26,7 +33,13 @@ object TouchLogic {
         return activated
     }
 
-    fun getActivatedSlide(touches: Collection<Offset>, totalWidth: Float, airAreaHeight: Float, slideAreaHeight: Float, multiS: Float): Set<Int> {
+    fun getActivatedSlide(
+        touches: Collection<Offset>,
+        totalWidth: Float,
+        airAreaHeight: Float,
+        slideAreaHeight: Float,
+        multiS: Float
+    ): Set<Int> {
         val activated = mutableSetOf<Int>()
         val sw = totalWidth / 16
         val sh = slideAreaHeight / 2

@@ -58,6 +58,7 @@ import kotlinx.coroutines.launch
 import org.cf0x.rustnithm.Data.Haptic
 import org.cf0x.rustnithm.Data.TouchLogic
 import org.cf0x.rustnithm.Theme.DefaultGameSkin
+
 @Composable
 fun JourVisual(
     connState: ConnState,
@@ -94,7 +95,14 @@ fun JourVisual(
     onTestChanged: (Boolean) -> Unit,
     onCardChanged: (Boolean) -> Unit,
     airMode: Int,
-    onMickeyToggle: (Boolean) -> Unit
+    onMickeyToggle: (Boolean) -> Unit,
+
+    flickZoneNum: Int,
+    flickThreshold: Int,
+    flickEqualizerPlus: Int,
+    flickEqualizerMinus: Int,
+    flickUp: Int,
+    flickDown: Int
 ) {
     val scope = rememberCoroutineScope()
     var tempIp by remember(savedIp) { mutableStateOf(savedIp) }
@@ -136,7 +144,7 @@ fun JourVisual(
                 .fillMaxSize()
                 .padding(top = 58.dp)
                 .onSizeChanged { containerSize = it }
-                .pointerInput(airMode) { 
+                .pointerInput(airMode, flickEqualizerPlus, flickEqualizerMinus, flickUp, flickDown, flickZoneNum) {
                     awaitEachGesture {
                         while (true) {
                             val event = awaitPointerEvent()
@@ -150,13 +158,30 @@ fun JourVisual(
                                             if (poolIdx != -1) pointerMapping[poolIdx] = pId
                                         }
                                         if (poolIdx != -1) {
-                                            org.cf0x.rustnithm.Data.Net.nativeUpdateFlickCoords(poolIdx, change.position.y.toInt())
+                                            val yCoord = change.position.y.toInt()
+                                            org.cf0x.rustnithm.Data.Net.nativeUpdateFlickCoords(poolIdx, yCoord)
+                                            org.cf0x.rustnithm.Emu.TankManager.updateFlick(
+                                                index = poolIdx,
+                                                y = yCoord,
+                                                zonesNum = flickZoneNum,
+                                                up = flickUp,
+                                                down = flickDown,
+                                                containerHeight = containerSize.height
+                                            )
                                         }
                                     } else {
                                         val poolIdx = pointerMapping.indexOf(pId)
                                         if (poolIdx != -1) {
                                             pointerMapping[poolIdx] = -1
                                             org.cf0x.rustnithm.Data.Net.nativeUpdateFlickCoords(poolIdx, -1)
+                                            org.cf0x.rustnithm.Emu.TankManager.updateFlick(
+                                                index = poolIdx,
+                                                y = -1,
+                                                zonesNum = flickZoneNum,
+                                                up = flickUp,
+                                                down = flickDown,
+                                                containerHeight = containerSize.height
+                                            )
                                         }
                                     }
                                 }
@@ -174,7 +199,7 @@ fun JourVisual(
                                 val totalH = containerSize.height.toFloat()
                                 val airH = totalH * percentPage
                                 val slideH = totalH - airH
-                                val newAir = TouchLogic.getActivatedAir(allCurrentPoints, airH, multiA)
+                                val newAir = TouchLogic.getActivatedAir(allCurrentPoints, airH, multiA, airMode)
                                 val newSlide = TouchLogic.getActivatedSlide(allCurrentPoints, totalW, airH, slideH, multiS)
                                 onActivatedChanged(newAir, newSlide)
                             }
@@ -201,8 +226,17 @@ fun JourVisual(
                 multiS = multiS,
                 touchPoints = touchPoints,
                 seedColor = seedColor,
-                isDark = isDark
+                isDark = isDark,
+                airMode = airMode
             )
+            if (airMode == 2) {
+                Substratum(
+                    flickZoneNum = flickZoneNum,
+                    touchPoints = touchPoints,
+                    seedColor = seedColor,
+                    isDark = isDark
+                )
+            }
         }
 
         Row(

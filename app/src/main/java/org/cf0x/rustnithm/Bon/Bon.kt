@@ -40,6 +40,13 @@ fun Bon() {
     val accessCodes by config.accessCodes.collectAsState()
     val sendFrequency by config.sendFrequency.collectAsState()
 
+    val flickThreshold by config.flickThreshold.collectAsState()
+    val flickEqualizerPlus by config.flickEqualizerPlus.collectAsState()
+    val flickEqualizerMinus by config.flickEqualizerMinus.collectAsState()
+    val flickUp by config.flickUp.collectAsState()
+    val flickDown by config.flickDown.collectAsState()
+    val flickZoneNum by config.flickZoneNum.collectAsState()
+
     LaunchedEffect(accessCodes, sendFrequency) {
         config.initStates(accessCodes, sendFrequency)
     }
@@ -72,6 +79,13 @@ fun Bon() {
         frequencyValue = config.frequencyInput,
         airMode = airMode,
 
+        flickThreshold = flickThreshold,
+        flickEqualizerPlus = flickEqualizerPlus,
+        flickEqualizerMinus = flickEqualizerMinus,
+        flickUp = flickUp,
+        flickDown = flickDown,
+        flickZoneNum = flickZoneNum,
+
         onInfoClick = { config.showInfoDialog = true },
         onThemeChange = { config.updateTheme(it) },
         onColorPickerOpen = { config.showColorPickerDialog = true },
@@ -80,6 +94,14 @@ fun Bon() {
         onSensitivityAChange = { config.updateSensitivityA(it) },
         onSensitivitySChange = { config.updateSensitivityS(it) },
         onAirModeChange = { config.updateAirMode(it) },
+
+        onFlickThresholdChange = { config.updateFlickThreshold(it) },
+        onFlickEqualizerPlusChange = { config.updateFlickEqualizerPlus(it) },
+        onFlickEqualizerMinusChange = { config.updateFlickEqualizerMinus(it) },
+        onFlickUpChange = { config.updateFlickUp(it) },
+        onFlickDownChange = { config.updateFlickDown(it) },
+        onFlickZoneNumChange = { config.updateFlickZoneNum(it) },
+
         onFrequencyValueChange = { config.frequencyInput = it },
         onFrequencySave = { config.saveFrequency() },
         onAccessCodeValueChange = { config.textFieldValue = it },
@@ -91,6 +113,7 @@ fun Bon() {
         onResetAllClick = { config.showResetDialog = true },
         contentPadding = contentPadding,
     )
+
     if (config.showColorPickerDialog) {
         ColorPickerDialog(
             initialColor = Color(seedColorLong),

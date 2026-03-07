@@ -26,6 +26,8 @@ object Net {
     external fun nativeTouchDown(pid: Int, y: Int)
     external fun nativeTouchUp(pid: Int)
 
+    external fun nativeTriggerFlick()
+
     private external fun nativeUpdateState(
         packetType: Int,
         buttonMask: Int,
@@ -41,10 +43,7 @@ object Net {
     fun initEngine(frequency: Int) {
         try {
             loadLibrary()
-            if (isLibraryLoaded) {
-                nativeInit(frequency)
-                Log.d("Net", "Rustnithm engine initialized with frequency: $frequency Hz")
-            }
+            if (isLibraryLoaded) nativeInit(frequency)
         } catch (e: Exception) {
             Log.e("Net", "Init failed", e)
         }
@@ -114,17 +113,13 @@ object Net {
             if (airMode == 1) {
                 for (id in air) {
                     val bitIndex = id - 1
-                    if (bitIndex in 0..5) {
-                        airByte = airByte or (1 shl bitIndex)
-                    }
+                    if (bitIndex in 0..5) airByte = airByte or (1 shl bitIndex)
                 }
             }
             var sliderMask = 0
             for (id in slide) {
                 val adjustedId = id - 1
-                if (adjustedId in 0..31) {
-                    sliderMask = sliderMask or (1 shl adjustedId)
-                }
+                if (adjustedId in 0..31) sliderMask = sliderMask or (1 shl adjustedId)
             }
             nativeUpdateState(32, 0, airByte, sliderMask, 0, null, airMode)
         }

@@ -21,7 +21,8 @@ fun DefaultGameSkin(
     touchPoints: Map<*, Offset>,
     multiS: Float,
     seedColor: Color,
-    isDark: Boolean
+    isDark: Boolean,
+    airMode: Int
 ) {
     val engine = remember(seedColor, isDark) {
         SkinColorEngine(seedColor, isDark)
@@ -37,18 +38,22 @@ fun DefaultGameSkin(
         for (i in 0 until 6) {
             val rectTopY = airAreaHeight - (i + 1) * singleAirHeight
             val isActive = activatedAir.contains(i + 1)
+
             drawRect(
                 color = engine.getAreaColor(index = i + 1, isActive = isActive),
                 topLeft = Offset(0f, rectTopY),
                 size = Size(totalWidth, singleAirHeight)
             )
-            drawRect(
-                color = engine.getDividerColor(index = i + 1),
-                topLeft = Offset(0f, rectTopY),
-                size = Size(totalWidth, singleAirHeight),
-                style = Stroke(width = 1.dp.toPx())
-            )
+            if (airMode == 1) {
+                drawRect(
+                    color = engine.getDividerColor(index = i + 1),
+                    topLeft = Offset(0f, rectTopY),
+                    size = Size(totalWidth, singleAirHeight),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+            }
         }
+
         val sw = totalWidth / 16
         val rslide = sw * multiS
         val sh = slideAreaHeight / 2
@@ -70,12 +75,14 @@ fun DefaultGameSkin(
                 style = Stroke(width = 0.5.dp.toPx())
             )
         }
+
         drawLine(
             color = engine.getDividerColor(index = 0, alpha = 0.6f),
             start = Offset(0f, airAreaHeight + sh),
             end = Offset(totalWidth, airAreaHeight + sh),
             strokeWidth = 1.dp.toPx()
         )
+
         for (i in 1..15) {
             val lineX = totalWidth - (i * sw)
             drawLine(
@@ -85,6 +92,7 @@ fun DefaultGameSkin(
                 strokeWidth = 1.dp.toPx()
             )
         }
+
         touchPoints.values.forEach { pos ->
             val pointColor = engine.getAreaColor(isActive = true, alpha = 0.5f)
 
