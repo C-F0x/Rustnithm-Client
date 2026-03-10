@@ -1,5 +1,6 @@
 package org.cf0x.rustnithm.Bon
 
+import android.app.Application
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.WindowInsets
@@ -13,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,27 +25,39 @@ fun Bon() {
     val context = LocalContext.current
     val haptic = remember { Haptic.getInstance() }
 
-    val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
-    val config: BonViewModel = remember {
-        BonViewModel(dataManager, haptic, context)
+    val isHardwareSupportVibration = remember {
+        haptic.isSupportVibration(context)
     }
 
-    val themeMode by config.themeMode.collectAsState()
-    val seedColorLong by config.seedColor.collectAsState()
-    val percentPage by config.percentPage.collectAsState()
-    val multiA by config.multiA.collectAsState()
-    val multiS by config.multiS.collectAsState()
-    val airMode by config.airMode.collectAsState()
-    val enableVibration by config.enableVibration.collectAsState()
-    val accessCodes by config.accessCodes.collectAsState()
-    val sendFrequency by config.sendFrequency.collectAsState()
+    val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
 
-    val flickThreshold by config.flickThreshold.collectAsState()
-    val flickEqualizerPlus by config.flickEqualizerPlus.collectAsState()
-    val flickEqualizerMinus by config.flickEqualizerMinus.collectAsState()
-    val flickUp by config.flickUp.collectAsState()
-    val flickDown by config.flickDown.collectAsState()
-    val flickZoneNum by config.flickZoneNum.collectAsState()
+    val config: BonViewModel = remember {
+        BonViewModel(
+            context.applicationContext as Application,
+            dataManager,
+            haptic
+        )
+    }
+
+    val themeMode by config.themeMode.collectAsState(initial = 0)
+    val useDynamicColor by config.useDynamicColor.collectAsState(initial = true)
+    val seedColorLong by config.seedColor.collectAsState(initial = 0L)
+    val percentPage by config.percentPage.collectAsState(initial = 0.5f)
+    val multiA by config.multiA.collectAsState(initial = 0.05f)
+    val multiS by config.multiS.collectAsState(initial = 0.05f)
+    val airMode by config.airMode.collectAsState(initial = 1)
+    val enableVibration by config.enableVibration.collectAsState(initial = false)
+    val accessCodes by config.accessCodes.collectAsState(initial = "")
+    val sendFrequency by config.sendFrequency.collectAsState(initial = 500)
+
+    val flickThreshold by config.flickThreshold.collectAsState(initial = 40)
+    val flickEqualizerPlus by config.flickEqualizerPlus.collectAsState(initial = 1)
+    val flickEqualizerMinus by config.flickEqualizerMinus.collectAsState(initial = 1)
+    val flickUp by config.flickUp.collectAsState(initial = 1)
+    val flickDown by config.flickDown.collectAsState(initial = 1)
+    val flickZoneNum by config.flickZoneNum.collectAsState(initial = 32)
+    val flickOnce by config.flickOnce.collectAsState(initial = false)
+    val isPhysicsInvalid by config.isPhysicsInvalid.collectAsState(initial = false)
 
     LaunchedEffect(accessCodes, sendFrequency) {
         config.initStates(accessCodes, sendFrequency)
@@ -64,15 +76,17 @@ fun Bon() {
         top = statusBarHeight + topAppBarHeight, bottom = 16.dp
     )
 
-    val defaultSeedColor = MaterialTheme.colorScheme.primary.toArgb().toLong()
-
     SettingsScreen(
         themeMode = themeMode,
+        useDynamicColor = useDynamicColor,
+        onDynamicColorChange = { config.updateDynamicColor(it) },
         seedColorLong = seedColorLong,
         percentPage = percentPage,
         multiA = multiA,
         multiS = multiS,
-        enableVibration = enableVibration,
+        enableVibration = if (isHardwareSupportVibration) enableVibration else false,
+        isVibrationHardwareSupported = isHardwareSupportVibration,
+
         accessCodeValue = config.textFieldValue,
         isAccessCodeError = config.isError,
         passwordVisible = config.passwordVisible,
@@ -85,11 +99,16 @@ fun Bon() {
         flickUp = flickUp,
         flickDown = flickDown,
         flickZoneNum = flickZoneNum,
+        flickOnce = flickOnce,
+        onFlickOnceChange = { config.updateFlickOnce(it) },
+
+        isPhysicsInvalid = isPhysicsInvalid,
+        showFormulaDialog = config.showFormulaDialog,
+        onFormulaDialogToggle = { config.showFormulaDialog = it },
 
         onInfoClick = { config.showInfoDialog = true },
         onThemeChange = { config.updateTheme(it) },
         onColorPickerOpen = { config.showColorPickerDialog = true },
-        onColorReset = { config.updateSeedColor(defaultSeedColor) },
         onPercentChange = { config.updatePercent(it) },
         onSensitivityAChange = { config.updateSensitivityA(it) },
         onSensitivitySChange = { config.updateSensitivityS(it) },
@@ -107,7 +126,9 @@ fun Bon() {
         onAccessCodeValueChange = { config.textFieldValue = it },
         onAccessCodeToggleVisible = { config.passwordVisible = !config.passwordVisible },
         onAccessCodeSave = { config.saveAccessCode() },
-        onVibrationChange = { config.toggleVibration(it) },
+
+        onVibrationChange = { if (isHardwareSupportVibration) config.toggleVibration(it) },
+
         onImportClick = { filePickerLauncher.launch(arrayOf("application/json", "image/*")) },
         onDeleteClick = { config.resetBackground() },
         onResetAllClick = { config.showResetDialog = true },

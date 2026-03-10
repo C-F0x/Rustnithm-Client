@@ -12,8 +12,6 @@ Total built with Kotlin
 ToggleSync doesnt work
 
 
-MickeyButton might get err, double click to fix it
-
 
 # Todo-list
 

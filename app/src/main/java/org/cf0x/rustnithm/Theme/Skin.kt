@@ -1,13 +1,14 @@
 package org.cf0x.rustnithm.Theme
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
@@ -20,12 +21,13 @@ fun DefaultGameSkin(
     multiA: Float,
     touchPoints: Map<*, Offset>,
     multiS: Float,
-    seedColor: Color,
-    isDark: Boolean,
     airMode: Int
 ) {
-    val engine = remember(seedColor, isDark) {
-        SkinColorEngine(seedColor, isDark)
+    val currentColor = MaterialTheme.colorScheme.primary
+    val isDark = isSystemInDarkTheme()
+
+    val engine = remember(currentColor, isDark) {
+        SkinColorEngine(currentColor, isDark)
     }
 
     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -40,13 +42,13 @@ fun DefaultGameSkin(
             val isActive = activatedAir.contains(i + 1)
 
             drawRect(
-                color = engine.getAreaColor(index = i + 1, isActive = isActive),
+                color = engine.getAreaColor(isActive = isActive),
                 topLeft = Offset(0f, rectTopY),
                 size = Size(totalWidth, singleAirHeight)
             )
             if (airMode == 1) {
                 drawRect(
-                    color = engine.getDividerColor(index = i + 1),
+                    color = engine.getDividerColor(),
                     topLeft = Offset(0f, rectTopY),
                     size = Size(totalWidth, singleAirHeight),
                     style = Stroke(width = 1.dp.toPx())
@@ -64,7 +66,7 @@ fun DefaultGameSkin(
 
             val isActive = activatedSlide.contains(index + 1)
             drawRect(
-                color = engine.getAreaColor(index = index + 1, isActive = isActive),
+                color = engine.getAreaColor(isActive = isActive),
                 topLeft = rectOffset,
                 size = Size(sw, sh)
             )
@@ -77,7 +79,7 @@ fun DefaultGameSkin(
         }
 
         drawLine(
-            color = engine.getDividerColor(index = 0, alpha = 0.6f),
+            color = engine.getDividerColor(alpha = 0.6f),
             start = Offset(0f, airAreaHeight + sh),
             end = Offset(totalWidth, airAreaHeight + sh),
             strokeWidth = 1.dp.toPx()
@@ -86,7 +88,7 @@ fun DefaultGameSkin(
         for (i in 1..15) {
             val lineX = totalWidth - (i * sw)
             drawLine(
-                color = engine.getDividerColor(index = i, alpha = 0.6f),
+                color = engine.getDividerColor(alpha = 0.6f),
                 start = Offset(lineX, airAreaHeight),
                 end = Offset(lineX, totalHeight),
                 strokeWidth = 1.dp.toPx()

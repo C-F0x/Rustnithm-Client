@@ -4,7 +4,6 @@ import org.cf0x.rustnithm.Data.Net
 
 class Tank {
     private val flickDefault = 1024
-
     private var flickHeight = flickDefault
     private var flickZoneLast = 0
     var bind = 0
@@ -22,7 +21,6 @@ class Tank {
 
     fun tickAnalysis(threshold: Int, plus: Int, minus: Int): Boolean {
         if (flickHeight == flickDefault) return false
-
         val flickDelta = flickHeight - flickDefault
 
         return if (flickDelta > 0) {
@@ -57,6 +55,7 @@ class Tank {
 object TankManager {
     private val tanks = Array(10) { Tank() }
     private val pointerToTankMap = mutableMapOf<Int, Int>()
+    private val flickedPointers = mutableSetOf<Int>()
 
     fun updateFlick(
         index: Int,
@@ -72,8 +71,10 @@ object TankManager {
                 tanks[tankIdx].reset()
                 pointerToTankMap.remove(index)
             }
+            flickedPointers.remove(index)
             return
         }
+        if (flickedPointers.contains(index)) return
 
         val tankIdx = pointerToTankMap[index] ?: run {
             val available = tanks.indexOfFirst { it.bind == 0 }
@@ -94,11 +95,23 @@ object TankManager {
         }
     }
 
-    fun analysisLoop(threshold: Int, plus: Int, minus: Int) {
-        tanks.forEach { tank ->
+    fun analysisLoop(threshold: Int, plus: Int, minus: Int, flickOnce: Boolean) {
+        val iterator = pointerToTankMap.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val pointerIndex = entry.key
+            val tankIdx = entry.value
+            val tank = tanks[tankIdx]
+
             if (tank.bind == 1) {
                 if (tank.tickAnalysis(threshold, plus, minus)) {
                     Net.nativeTriggerFlick()
+
+                    if (flickOnce) {
+                        flickedPointers.add(pointerIndex)
+                        tank.reset()
+                        iterator.remove()
+                    }
                 }
             }
         }
@@ -107,5 +120,6 @@ object TankManager {
     fun resetAll() {
         tanks.forEach { it.reset() }
         pointerToTankMap.clear()
+        flickedPointers.clear()
     }
 }

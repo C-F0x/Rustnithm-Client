@@ -1,6 +1,8 @@
 package org.cf0x.rustnithm.Bon
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,30 +10,34 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     themeMode: Int,
+    useDynamicColor: Boolean,
     seedColorLong: Long,
     percentPage: Float,
     multiA: Float,
     multiS: Float,
     airMode: Int,
     enableVibration: Boolean,
+    isVibrationHardwareSupported: Boolean = true,
     accessCodeValue: String,
     isAccessCodeError: Boolean,
     passwordVisible: Boolean,
@@ -43,11 +49,16 @@ fun SettingsScreen(
     flickUp: Int,
     flickDown: Int,
     flickZoneNum: Int,
+    flickOnce: Boolean,
+
+    isPhysicsInvalid: Boolean,
+    showFormulaDialog: Boolean,
+    onFormulaDialogToggle: (Boolean) -> Unit,
 
     onInfoClick: () -> Unit,
     onThemeChange: (Int) -> Unit,
+    onDynamicColorChange: (Boolean) -> Unit,
     onColorPickerOpen: () -> Unit,
-    onColorReset: () -> Unit,
     onPercentChange: (Float) -> Unit,
     onSensitivityAChange: (Float) -> Unit,
     onSensitivitySChange: (Float) -> Unit,
@@ -68,16 +79,10 @@ fun SettingsScreen(
     onFlickUpChange: (Int) -> Unit,
     onFlickDownChange: (Int) -> Unit,
     onFlickZoneNumChange: (Int) -> Unit,
+    onFlickOnceChange: (Boolean) -> Unit,
 
     contentPadding: PaddingValues
 ) {
-    var internalThreshold by remember(flickThreshold) { mutableFloatStateOf(flickThreshold.toFloat()) }
-    var internalEqualizerPlus by remember(flickEqualizerPlus) { mutableFloatStateOf(flickEqualizerPlus.toFloat()) }
-    var internalEqualizerMinus by remember(flickEqualizerMinus) { mutableFloatStateOf(flickEqualizerMinus.toFloat()) }
-    var internalUp by remember(flickUp) { mutableFloatStateOf(flickUp.toFloat()) }
-    var internalDown by remember(flickDown) { mutableFloatStateOf(flickDown.toFloat()) }
-    var internalZone by remember(flickZoneNum) { mutableFloatStateOf(flickZoneNum.toFloat()) }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding,
@@ -85,20 +90,20 @@ fun SettingsScreen(
     ) {
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                IconButton(onClick = onInfoClick) { Icon(Icons.Default.Info, null) }
+                Text("Settings", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold)
+                IconButton(onClick = onInfoClick) {
+                    Icon(Icons.Default.Info, null, tint = MaterialTheme.colorScheme.primary)
+                }
             }
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            SettingsGroup(title = "Appearance") {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Appearance", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         val options = listOf("Light", "Dark", "System")
                         options.forEachIndexed { index, label ->
@@ -109,37 +114,68 @@ fun SettingsScreen(
                             ) { Text(label) }
                         }
                     }
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(Modifier.height(16.dp))
+                    ToggleSettingItem("Dynamic Color", "Material You tones", useDynamicColor, onCheckedChange = onDynamicColorChange)
+
+                    val isCustomEnabled = !useDynamicColor
+                    val customBackgroundColor = if (isCustomEnabled) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerLow
+                    }
+
+
                     ListItem(
                         modifier = Modifier
-                            .clip(MaterialTheme.shapes.medium)
-                            .clickable { onColorPickerOpen() }
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
-                        headlineContent = { Text("Skin Seed Color") },
-                        leadingContent = { Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color(seedColorLong))) },
-                        trailingContent = { IconButton(onClick = onColorReset) { Icon(Icons.Default.Build, null) } }
+                            .clip(MaterialTheme.shapes.large)
+                            .clickable(enabled = isCustomEnabled) { onColorPickerOpen() }
+                            .background(customBackgroundColor),
+                        headlineContent = {
+                            Text(
+                                "Skin Seed Color",
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isCustomEnabled) 1f else 0.38f)
+                            )
+                        },
+                        leadingContent = {
+                            val previewColor = if (isCustomEnabled) Color(seedColorLong) else MaterialTheme.colorScheme.primary
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(previewColor)
+                                    .border(
+                                        width = if (isCustomEnabled) 1.dp else 1.5.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                        shape = CircleShape
+                                    )
+                            )
+                        },
+                        trailingContent = {
+                            if (isCustomEnabled) {
+                                Icon(
+                                    Icons.Default.Palette,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
                     )
                 }
             }
         }
+
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Interaction", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Text("Split Ratio: ${(percentPage * 100).roundToInt()}%")
-                    Slider(value = percentPage, onValueChange = onPercentChange, valueRange = 0.1f..0.9f)
-                    Text("Air Sensitivity: ${"%.2f".format(multiA)}")
-                    Slider(value = multiA, onValueChange = onSensitivityAChange, valueRange = 0f..0.5f)
-                    Text("Slide Sensitivity: ${"%.2f".format(multiS)}")
-                    Slider(value = multiS, onValueChange = onSensitivitySChange, valueRange = 0f..0.5f)
-                }
+            SettingsGroup(title = "Interaction") {
+                ExpressiveSlider("Split Ratio", percentPage, 0.1f..0.9f, onValueChange = onPercentChange, displayValue = "${(percentPage * 100).roundToInt()}%")
+                ExpressiveSlider("Air Sensitivity", multiA, 0f..0.5f, onValueChange = onSensitivityAChange, displayValue = "%.2f".format(multiA))
+                ExpressiveSlider("Slide Sensitivity", multiS, 0f..0.5f, onValueChange = onSensitivitySChange, displayValue = "%.2f".format(multiS))
             }
         }
+
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
+            SettingsGroup(title = "Air Mode") {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Air Mode", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(12.dp))
                     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                         val options = listOf("Native", "Flick", "Auto")
                         options.forEachIndexed { index, label ->
@@ -152,232 +188,286 @@ fun SettingsScreen(
                         }
                     }
                 }
-            }
-        }
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "Transmission: ${frequencyValue.toInt()} Hz",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Slider(
-                        value = frequencyValue,
-                        onValueChange = onFrequencyValueChange,
-                        onValueChangeFinished = { onFrequencySave() },
-                        valueRange = 50f..1000f,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                ExpressiveSlider("Frequency", frequencyValue, 50f..1000f, onValueChange = onFrequencyValueChange, onValueChangeFinished = onFrequencySave, displayValue = "${frequencyValue.toInt()} Hz")
             }
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Flick Physics (Advanced)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
+            val errorModifier = if (isPhysicsInvalid) {
+                Modifier.border(BorderStroke(2.dp, MaterialTheme.colorScheme.error), MaterialTheme.shapes.extraLarge)
+            } else Modifier
 
-                    Text("Trigger Threshold: $flickThreshold", style = MaterialTheme.typography.labelMedium)
-                    Slider(
-                        value = internalThreshold,
-                        onValueChange = {
-                            internalThreshold = it
-                            onFlickThresholdChange(it.roundToInt())
-                        },
-                        valueRange = 1f..160f,
-                        steps = 159
-                    )
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Equalizer +: $flickEqualizerPlus", style = MaterialTheme.typography.labelSmall)
-                            Slider(
-                                value = internalEqualizerPlus,
-                                onValueChange = {
-                                    internalEqualizerPlus = it
-                                    onFlickEqualizerPlusChange(it.roundToInt())
-                                },
-                                valueRange = 1f..20f,
-                                steps = 19
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Equalizer -: $flickEqualizerMinus", style = MaterialTheme.typography.labelSmall)
-                            Slider(
-                                value = internalEqualizerMinus,
-                                onValueChange = {
-                                    internalEqualizerMinus = it
-                                    onFlickEqualizerMinusChange(it.roundToInt())
-                                },
-                                valueRange = 1f..20f,
-                                steps = 19
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Step Up: $flickUp", style = MaterialTheme.typography.labelSmall)
-                            Slider(
-                                value = internalUp,
-                                onValueChange = {
-                                    internalUp = it
-                                    onFlickUpChange(it.roundToInt())
-                                },
-                                valueRange = 1f..40f,
-                                steps = 39
-                            )
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Step Down: $flickDown", style = MaterialTheme.typography.labelSmall)
-                            Slider(
-                                value = internalDown,
-                                onValueChange = {
-                                    internalDown = it
-                                    onFlickDownChange(it.roundToInt())
-                                },
-                                valueRange = 1f..40f,
-                                steps = 39
-                            )
-                        }
-                    }
-
-                    Text("Flick Zones: $flickZoneNum", style = MaterialTheme.typography.labelMedium)
-                    Slider(
-                        value = internalZone,
-                        onValueChange = {
-                            internalZone = it
-                            onFlickZoneNumChange(it.roundToInt())
-                        },
-                        valueRange = 4f..64f,
-                        steps = 60
-                    )
-                }
-            }
-        }
-
-        item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Security", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = accessCodeValue,
-                        onValueChange = onAccessCodeValueChange,
+            SettingsGroup(
+                title = "Flick Physics",
+                modifier = errorModifier
+            ) {
+                Column {
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Access Codes (20 Digits)") },
-                        isError = isAccessCodeError,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(Modifier.weight(1f)) {
+                            ToggleSettingItem(
+                                label = "Flick Once",
+                                supportingText = null,
+                                checked = flickOnce,
+                                onCheckedChange = onFlickOnceChange
+                            )
+                        }
+
+                        VerticalDivider(
+                            modifier = Modifier.height(32.dp).padding(horizontal = 8.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outlineVariant
+                        )
+
+                        ListItem(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { onFormulaDialogToggle(true) },
+                            headlineContent = { Text("Tutorial") },
+                            trailingContent = {
+                                Icon(
+                                    Icons.Outlined.HelpOutline,
+                                    contentDescription = "Show Formula",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+
+                    ValueDialItemExtended("Trigger Threshold", flickThreshold, 0..160, 20, onFlickThresholdChange)
+
+                    Row(Modifier.fillMaxWidth()) {
+                        Box(Modifier.weight(1f)) {
+                            ValueDialItemExtended("Eq +", flickEqualizerPlus, 0..40, 5, onFlickEqualizerPlusChange)
+                        }
+                        Box(Modifier.weight(1f)) {
+                            ValueDialItemExtended("Eq -", flickEqualizerMinus, 0..40, 5, onFlickEqualizerMinusChange)
+                        }
+                    }
+
+                    Row(Modifier.fillMaxWidth()) {
+                        Box(Modifier.weight(1f)) {
+                            ValueDialItemExtended("Step Up", flickUp, 0..100, 10, onFlickUpChange)
+                        }
+                        Box(Modifier.weight(1f)) {
+                            ValueDialItemExtended("Step Down", flickDown, 0..100, 10, onFlickDownChange)
+                        }
+                    }
+
+                    ValueDialItemExtended("Flick Zones", flickZoneNum, 0..64, 16, onFlickZoneNumChange)
+
+                    if (isPhysicsInvalid) {
+                        Text(
+                            text = "Invalid physics parameters detected. Tap tutorial to check formula.",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        item {
+            SettingsGroup(title = "Security & Haptics") {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    OutlinedTextField(
+                        value = accessCodeValue, onValueChange = onAccessCodeValueChange,
+                        modifier = Modifier.fillMaxWidth(), label = { Text("Access Codes (20 Digits)") },
+                        isError = isAccessCodeError, shape = MaterialTheme.shapes.large,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             Row {
-                                IconButton(onClick = onAccessCodeToggleVisible) {
-                                    Icon(
-                                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = "Toggle mask"
-                                    )
-                                }
-                                IconButton(onClick = onAccessCodeSave) {
-                                    Icon(imageVector = Icons.Default.Done, contentDescription = "Save")
-                                }
+                                IconButton(onClick = onAccessCodeToggleVisible) { Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null) }
+                                IconButton(onClick = onAccessCodeSave) { Icon(Icons.Default.CheckCircle, null, tint = MaterialTheme.colorScheme.primary) }
                             }
                         },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
+                    Spacer(Modifier.height(16.dp))
+                    ToggleSettingItem("Haptic Feedback", if (isVibrationHardwareSupported) "Tactile response" else "Unsupported", enableVibration, isVibrationHardwareSupported, onVibrationChange)
                 }
             }
         }
 
         item {
-            Card(modifier = Modifier.fillMaxWidth()) {
-                ListItem(
-                    headlineContent = { Text("Haptic Feedback") },
-                    trailingContent = {
-                        Switch(checked = enableVibration, onCheckedChange = onVibrationChange)
-                    }
-                )
-            }
-        }
-
-        item {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = onImportClick, modifier = Modifier.weight(1f)) {
-                    Icon(Icons.Default.Share, null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Import")
+            Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FilledTonalButton(onClick = onImportClick, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.large) {
+                    Icon(Icons.Default.FileDownload, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Import Skin")
                 }
-                OutlinedButton(
-                    onClick = onDeleteClick,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Icon(Icons.Default.Delete, null)
-                    Text("Delete")
+                OutlinedButton(onClick = onDeleteClick, modifier = Modifier.weight(1f), shape = MaterialTheme.shapes.large, colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.tertiary)) {
+                    Icon(Icons.Default.DeleteForever, null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Clear Skin")
                 }
             }
         }
 
         item {
             Button(
-                onClick = onResetAllClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.error
-                )
+                onClick = onResetAllClick, modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp), shape = MaterialTheme.shapes.large,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer, contentColor = MaterialTheme.colorScheme.onTertiaryContainer)
             ) {
-                Icon(Icons.Default.Refresh, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Reset All Settings")
+                Icon(Icons.Default.Warning, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Factory Reset All Settings")
             }
         }
+    }
+
+    if (showFormulaDialog) {
+        FormulaDialog(onDismiss = { onFormulaDialogToggle(false) })
     }
 }
 
 @Composable
-fun ColorPickerDialog(
-    initialColor: Color,
-    onDismiss: () -> Unit,
-    onConfirm: (Long) -> Unit
-) {
-    val hsv = remember {
-        val res = FloatArray(3)
-        android.graphics.Color.colorToHSV(initialColor.toArgb(), res)
-        res
+fun FormulaDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Physics Diagnostics", fontWeight = FontWeight.Bold) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Acknowledge") }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                FormulaItem(" If Z > Z_last:", "H_next = H + U")
+                FormulaItem(" If Z < Z_last:", "H_next = H - D")
+                FormulaItem(" If |Δ| >= T:", "Signal = 1, H = H_default")
+                FormulaItem(" If 0 < Δ < T:", "H_next = H - Eq_minus")
+                FormulaItem(" If -T < Δ < 0:", "H_next = H + Eq_plus")
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Note: Δ = H - 1024. \nSystem will block saving if Eq >= T.",
+                    style = MaterialTheme.typography.labelSmall,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun FormulaItem(condition: String, result: String) {
+    Column {
+        Text(condition, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+        Text(result, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
     }
-    var hue by remember { mutableFloatStateOf(hsv[0]) }
-    var saturation by remember { mutableFloatStateOf(hsv[1]) }
-    var value by remember { mutableFloatStateOf(hsv[2]) }
-    val currentColor = remember(hue, saturation, value) {
-        Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
+}
+
+@Composable
+fun ValueDialItemExtended(
+    label: String,
+    value: Int,
+    range: IntRange,
+    majorStep: Int,
+    onValueChange: (Int) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    ListItem(
+        modifier = Modifier.clickable { showDialog = true },
+        headlineContent = { Text(label) },
+        trailingContent = {
+            Text(value.toString(), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+    )
+
+    if (showDialog) {
+        PhysicsDialDialog(
+            title = label,
+            initialValue = value,
+            range = range,
+            majorStep = majorStep,
+            onDismiss = { showDialog = false },
+            onConfirm = {
+                onValueChange(it)
+                showDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun PhysicsDialDialog(
+    title: String,
+    initialValue: Int,
+    range: IntRange,
+    majorStep: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var currentValue by remember { mutableIntStateOf(initialValue.coerceIn(range)) }
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    val dialConfigs = remember(range, majorStep) {
+        val majorOptions = (range.first..range.last step majorStep).toList()
+        val minorOptions = (0 until majorStep).toList()
+        listOf(
+            WavyoidConfig(
+                options = majorOptions,
+                initialSelectedIndex = ((currentValue - range.first) / majorStep).coerceAtLeast(0),
+                color = primaryColor,
+                amplitude = 18f
+            ),
+            WavyoidConfig(
+                options = minorOptions,
+                initialSelectedIndex = (currentValue - range.first) % majorStep,
+                color = primaryColor.copy(alpha = 0.6f),
+                amplitude = 10f,
+                pointPos = PointPos.Valley
+            )
+        )
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pick Seed Color") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(60.dp)
-                        .clip(MaterialTheme.shapes.medium)
-                        .background(currentColor)
-                )
-                Slider(value = hue, onValueChange = { hue = it }, valueRange = 0f..360f)
-                Slider(value = saturation, onValueChange = { saturation = it }, valueRange = 0f..1f)
-                Slider(value = value, onValueChange = { value = it }, valueRange = 0f..1f)
+        title = { Text(title) },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(currentValue) }) {
+                Text("Confirm", fontWeight = FontWeight.Bold)
             }
         },
-        confirmButton = {
-            Button(onClick = { onConfirm(currentColor.toArgb().toLong()) }) { Text("Confirm") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                WavyoidDial(
+                    modifier = Modifier.size(280.dp),
+                    configs = dialConfigs,
+                    isFocusMode = true,
+                    coreTextFormatter = { _ -> currentValue.toString() },
+                    onValuesChange = { layerIndex, _, selectedValue ->
+                        val selectedInt = selectedValue as Int
+                        currentValue = if (layerIndex == 0) {
+                            (selectedInt + ((currentValue - range.first) % majorStep) + range.first).coerceIn(range)
+                        } else {
+                            (((currentValue - range.first) / majorStep) * majorStep + selectedInt + range.first).coerceIn(range)
+                        }
+                    }
+                )
+                Text(
+                    text = "Tap center to switch Coarse/Fine",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     )
 }

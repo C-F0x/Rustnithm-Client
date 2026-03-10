@@ -15,11 +15,13 @@ object TankRush {
                 val threshold = dataManager.flickThreshold.value
                 val plus = dataManager.flickEqualizerPlus.value
                 val minus = dataManager.flickEqualizerMinus.value
+                val flickOnce = dataManager.flickOnce.value
 
                 TankManager.analysisLoop(
                     threshold = threshold,
                     plus = plus,
-                    minus = minus
+                    minus = minus,
+                    flickOnce = flickOnce
                 )
 
                 delay(10)

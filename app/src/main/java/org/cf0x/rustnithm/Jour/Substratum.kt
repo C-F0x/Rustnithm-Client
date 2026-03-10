@@ -1,7 +1,9 @@
 package org.cf0x.rustnithm.Jour
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -15,22 +17,26 @@ import org.cf0x.rustnithm.Theme.SkinColorEngine
 fun Substratum(
     flickZoneNum: Int,
     touchPoints: Map<*, Offset>,
-    seedColor: Color,
-    isDark: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val engine = remember(seedColor, isDark) {
-        SkinColorEngine(seedColor, isDark)
+    val currentColor = MaterialTheme.colorScheme.primary
+    val isDark = isSystemInDarkTheme()
+
+    val engine = remember<SkinColorEngine>(currentColor, isDark) {
+        SkinColorEngine(currentColor, isDark)
     }
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val totalWidth = size.width
         val totalHeight = size.height
-        val zoneHeight = totalHeight / flickZoneNum
+
+        val effectiveZoneNum = flickZoneNum.coerceAtLeast(1)
+        val zoneHeight = totalHeight / effectiveZoneNum
 
         touchPoints.values.forEach { pos ->
-            val zoneIndex = (pos.y / zoneHeight).toInt().coerceIn(0, flickZoneNum - 1)
+            val zoneIndex = (pos.y / zoneHeight).toInt().coerceIn(0, effectiveZoneNum - 1)
             val rectTop = zoneIndex * zoneHeight
+
             drawRect(
                 color = engine.getAreaColor(isActive = true, alpha = 0.12f),
                 topLeft = Offset(0f, rectTop),
@@ -43,7 +49,7 @@ fun Substratum(
         val tickLength = 10.dp.toPx()
         val strokeWidth = 1.dp.toPx()
 
-        for (i in 0..flickZoneNum) {
+        for (i in 0..effectiveZoneNum) {
             val lineY = i * zoneHeight
 
             drawLine(
@@ -67,6 +73,5 @@ fun Substratum(
                 strokeWidth = strokeWidth
             )
         }
-
     }
 }

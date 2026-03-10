@@ -24,12 +24,17 @@ class Haptic private constructor() {
             instance ?: Haptic().also { instance = it }
         }
     }
+    fun isSupportVibration(context: Context): Boolean {
+        val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+        return vm?.defaultVibrator?.hasVibrator() ?: false
+    }
+
     fun attachView(view: View) {
         if (vibrator != null) return
-        val context = view.context
-        val vibratorManager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-        vibrator = vibratorManager.defaultVibrator
+        val vm = view.context.applicationContext.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        vibrator = vm.defaultVibrator
     }
+
     fun onZoneActivated() {
         execute(zoneEffect)
     }
@@ -39,9 +44,10 @@ class Haptic private constructor() {
     }
 
     private fun execute(effect: VibrationEffect) {
-        val v = vibrator ?: return
-        if (v.hasVibrator()) {
-            v.vibrate(effect, hapticAttributes)
+        vibrator?.let { v ->
+            if (v.hasVibrator()) {
+                v.vibrate(effect, hapticAttributes)
+            }
         }
     }
 

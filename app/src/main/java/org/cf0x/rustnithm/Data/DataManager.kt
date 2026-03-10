@@ -41,6 +41,7 @@ class DataManager(context: Context) : ViewModel() {
     private val dataStore = context.dataStore
 
     private object PreferenceKeys {
+        val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val THEME_MODE = intPreferencesKey("theme_mode")
         val ENABLE_VIBRATION = booleanPreferencesKey("enable_vibration")
         val PERCENT_PAGE = floatPreferencesKey("percent_page")
@@ -60,9 +61,11 @@ class DataManager(context: Context) : ViewModel() {
         val FLICK_UP = intPreferencesKey("flick_up")
         val FLICK_DOWN = intPreferencesKey("flick_down")
         val FLICK_ZONE_NUM = intPreferencesKey("flick_zone_num")
+        val FLICK_ONCE = booleanPreferencesKey("flick_once")
     }
 
     private companion object {
+        const val DEFAULT_USE_DYNAMIC_COLOR = true
         const val DEFAULT_THEME_MODE = 2
         const val DEFAULT_ENABLE_VIBRATION = true
         const val DEFAULT_PERCENT_PAGE = 0.5f
@@ -79,6 +82,7 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_FLICK_UP = 10
         const val DEFAULT_FLICK_DOWN = 10
         const val DEFAULT_FLICK_ZONE_NUM = 32
+        const val DEFAULT_FLICK_ONCE = false
     }
 
     init {
@@ -90,7 +94,11 @@ class DataManager(context: Context) : ViewModel() {
             }
         }
     }
-
+    val useDynamicColor: StateFlow<Boolean> = dataStore.data
+        .map { preferences ->
+            preferences[PreferenceKeys.USE_DYNAMIC_COLOR] ?: DEFAULT_USE_DYNAMIC_COLOR
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_USE_DYNAMIC_COLOR)
     val targetIp: StateFlow<String> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.TARGET_IP] ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -162,27 +170,36 @@ class DataManager(context: Context) : ViewModel() {
     val flickZoneNum: StateFlow<Int> = dataStore.data
         .map { it[PreferenceKeys.FLICK_ZONE_NUM] ?: DEFAULT_FLICK_ZONE_NUM }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_ZONE_NUM)
+
+    val flickOnce: StateFlow<Boolean> = dataStore.data
+        .map { it[PreferenceKeys.FLICK_ONCE] ?: DEFAULT_FLICK_ONCE }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_ONCE)
+
     fun updateBackgroundAndPalette(uri: Uri, context: Context) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[PreferenceKeys.BACKGROUND_IMAGE_PATH] = uri.toString()
             }
-
-            try {
-                val bitmap =
-                    ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
-
-                Palette.from(bitmap).generate { palette ->
-                    val colorInt = palette?.getVibrantColor(
-                        palette.getDominantColor(DEFAULT_SEED_COLOR.toInt())
-                    )
-                    colorInt?.let {
-                        updateSeedColor(it.toLong())
+            if (useDynamicColor.value == false) {
+                try {
+                    val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
+                    Palette.from(bitmap).generate { palette ->
+                        val colorInt = palette?.getVibrantColor(
+                            palette.getDominantColor(DEFAULT_SEED_COLOR.toInt())
+                        )
+                        colorInt?.let {
+                            updateSeedColor(it.toLong())
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
+        }
+    }
+    fun updateUseDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.USE_DYNAMIC_COLOR] = enabled }
         }
     }
     fun updateTargetIp(ip: String) {
@@ -265,7 +282,10 @@ class DataManager(context: Context) : ViewModel() {
 
     fun resetToDefaults() {
         viewModelScope.launch {
-            dataStore.edit { it.clear() }
+            dataStore.edit {
+                it.clear()
+                it[PreferenceKeys.USE_DYNAMIC_COLOR] = DEFAULT_USE_DYNAMIC_COLOR
+            }
         }
     }
 
@@ -307,6 +327,11 @@ class DataManager(context: Context) : ViewModel() {
 
     fun updateFlickZoneNum(value: Int) {
         viewModelScope.launch { dataStore.edit { it[PreferenceKeys.FLICK_ZONE_NUM] = value } }
+    }
+    fun updateFlickOnce(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.FLICK_ONCE] = enabled }
+        }
     }
     class Factory(private val context: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

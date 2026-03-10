@@ -2,18 +2,28 @@ package org.cf0x.rustnithm.Jour
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import org.cf0x.rustnithm.Data.Net
+
 object JourBackend {
+
     fun validateIp(ip: String): Boolean {
-        return ip.isNotBlank() && ip.all { it.isDigit() || it == '.' }
+        val parts = ip.split('.')
+        if (parts.size != 4) return false
+        return parts.all { part ->
+            part.isNotEmpty() && part.length <= 3 && part.all { it.isDigit() } && part.toInt() in 0..255
+        }
     }
+
     fun validatePort(port: String): Boolean {
-        return port.toIntOrNull() in 0..65535
+        return port.toIntOrNull()?.let { it in 0..65535 } ?: false
     }
+
     fun updateNetworkConfig(ip: String, port: Int, protocol: Int) {
         Net.updateConfig(ip, port, protocol)
     }
+
     fun sendGameState(
         air: Set<Int>,
         airMode: Int,
@@ -47,13 +57,16 @@ object JourBackend {
             emit(connState)
             delay(100)
         }
-    }
+    }.distinctUntilChanged()
+
     fun toggleConnection() {
         Net.nativeToggleClient()
     }
+
     fun toggleSync() {
         Net.nativeToggleSync()
     }
+
     fun updateMickeyButton(enabled: Boolean) {
         Net.setMickeyState(enabled)
     }

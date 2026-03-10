@@ -66,9 +66,6 @@ fun JourVisual(
     activatedSlide: Set<Int>,
 
     backgroundUri: String?,
-    seedColor: Color,
-    isDark: Boolean,
-
     percentPage: Float,
     multiA: Float,
     multiS: Float,
@@ -225,16 +222,12 @@ fun JourVisual(
                 multiA = multiA,
                 multiS = multiS,
                 touchPoints = touchPoints,
-                seedColor = seedColor,
-                isDark = isDark,
                 airMode = airMode
             )
             if (airMode == 2) {
                 Substratum(
                     flickZoneNum = flickZoneNum,
-                    touchPoints = touchPoints,
-                    seedColor = seedColor,
-                    isDark = isDark
+                    touchPoints = touchPoints
                 )
             }
         }
