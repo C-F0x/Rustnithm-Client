@@ -2,12 +2,28 @@ import com.android.build.api.dsl.ApplicationExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+val versionProps = Properties()
+val propFile = project.rootProject.file("version.properties")
+if (propFile.exists()) {
+    propFile.inputStream().use { versionProps.load(it) }
+}
+
+val vMajor = (project.findProperty("verMajor") ?: versionProps.getProperty("ver_Major") ?: "0").toString()
+val vMinor = (project.findProperty("verMinor") ?: versionProps.getProperty("ver_Minor") ?: "0").toString()
+
+val dateTag = SimpleDateFormat("yyMM").format(Date())
+val dateDotTag = SimpleDateFormat("yy.MM").format(Date())
+
+val finalCode = "${dateTag}${vMajor}${vMinor}"
+val finalName = "${dateDotTag}.${vMajor}.${vMinor}"
 
 kotlin {
     compilerOptions {
@@ -19,12 +35,25 @@ configure<ApplicationExtension> {
     namespace = "org.cf0x.rustnithm"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
+    signingConfigs {
+        create("release") {
+            val ksFilePath = project.findProperty("ksFile")?.toString()
+            if (ksFilePath != null) {
+                storeFile = file(ksFilePath)
+                storePassword = project.findProperty("ksPwd")?.toString()
+                keyAlias = project.findProperty("alias")?.toString()
+                keyPassword = project.findProperty("keyPwd")?.toString()
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = "org.cf0x.rustnithm"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = SimpleDateFormat("yyMM10").format(Date()).toInt()
-        versionName = SimpleDateFormat("yy.MM.10").format(Date())
+
+        versionCode = finalCode.toInt()
+        versionName = finalName
 
         ndk {
             abiFilters.add("arm64-v8a")
@@ -35,11 +64,16 @@ configure<ApplicationExtension> {
 
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 
