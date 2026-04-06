@@ -1,2 +1,10 @@
 [target.aarch64-linux-android]
 linker = "F:\\KON-WORKSHOP\\AndroidSDK\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android33-clang.cmd"
+rustflags = [
+    "-Clink-arg=-Wl,-z,max-page-size=16384",
+    "-Clink-arg=-Wl,-z,common-page-size=16384",
+    "-Clink-arg=-Wl,-z,relro",
+    "-Clink-arg=-Wl,-z,now",
+    "-Clink-arg=-Wl,--enable-new-dtags",
+    "-Clink-arg=-Wl,-z,separate-loadable-segments"
+]

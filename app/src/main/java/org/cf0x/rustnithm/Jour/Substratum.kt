@@ -9,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import org.cf0x.rustnithm.Theme.SkinColorEngine
 
@@ -22,7 +21,7 @@ fun Substratum(
     val currentColor = MaterialTheme.colorScheme.primary
     val isDark = isSystemInDarkTheme()
 
-    val engine = remember<SkinColorEngine>(currentColor, isDark) {
+    val engine = remember(currentColor, isDark) {
         SkinColorEngine(currentColor, isDark)
     }
 

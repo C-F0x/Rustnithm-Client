@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    id("com.github.ben-manes.versions") version "0.53.0"
 }
 
 val versionProps = Properties()

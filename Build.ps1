@@ -43,7 +43,7 @@ Clear-Host
 Write-Host "================ BUILD PREVIEW ================" -ForegroundColor Yellow
 Write-Host "Build Type    : Release"
 Write-Host "ABI Filter    : arm64-v8a"
-Write-Host "Target Version: $dateDotTag.$newMajor.$newMinor"
+Write-Host "Target Version: $dateDotTag.$newMajor$newMinor"
 Write-Host "-----------------------------------------------"
 Write-Host "Keystore File : $(Get-Masked $sign.storeFile)"
 Write-Host "Store Password: $(Get-Masked $sign.storePassword)"

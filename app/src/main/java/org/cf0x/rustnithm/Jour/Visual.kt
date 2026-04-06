@@ -95,7 +95,6 @@ fun JourVisual(
     onMickeyToggle: (Boolean) -> Unit,
 
     flickZoneNum: Int,
-    flickThreshold: Int,
     flickEqualizerPlus: Int,
     flickEqualizerMinus: Int,
     flickUp: Int,

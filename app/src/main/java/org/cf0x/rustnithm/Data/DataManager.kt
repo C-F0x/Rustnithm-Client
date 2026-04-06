@@ -180,7 +180,7 @@ class DataManager(context: Context) : ViewModel() {
             dataStore.edit { preferences ->
                 preferences[PreferenceKeys.BACKGROUND_IMAGE_PATH] = uri.toString()
             }
-            if (useDynamicColor.value == false) {
+            if (!useDynamicColor.value) {
                 try {
                     val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(context.contentResolver, uri))
                     Palette.from(bitmap).generate { palette ->
