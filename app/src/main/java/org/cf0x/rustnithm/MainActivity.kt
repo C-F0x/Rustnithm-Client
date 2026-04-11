@@ -64,14 +64,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
-
             val themeMode by dataManager.themeMode.collectAsState()
             val useDynamicColor by dataManager.useDynamicColor.collectAsState()
             val seedColorLong by dataManager.seedColor.collectAsState()
+            val useExpressive by dataManager.useExpressive.collectAsState()
+            val language by dataManager.language.collectAsState()
+            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
+                if (language == "system") androidx.core.os.LocaleListCompat.getEmptyLocaleList()
+                else androidx.core.os.LocaleListCompat.forLanguageTags(language)
+            )
 
             RustnithmTheme(
                 themeMode = themeMode,
                 useDynamicColor = useDynamicColor,
+                useExpressive = useExpressive,
                 customSeedColor = Color(seedColorLong)
             ) {
                 MainScreen()

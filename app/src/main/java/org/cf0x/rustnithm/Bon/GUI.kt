@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.cf0x.rustnithm.Bon.Section.AboutSection
 import org.cf0x.rustnithm.Bon.Section.AccesscodeSection
 import org.cf0x.rustnithm.Bon.Section.AppearanceSection
 import org.cf0x.rustnithm.Bon.Section.FlickSection
@@ -39,6 +40,8 @@ import org.cf0x.rustnithm.Bon.Section.InteractionSection
 
 @Composable
 fun SettingsScreen(
+    language: String,
+    onLanguageChange: (String) -> Unit,
     themeMode: Int,
     useDynamicColor: Boolean,
     seedColorLong: Long,
@@ -68,6 +71,8 @@ fun SettingsScreen(
     onInfoClick: () -> Unit,
     onThemeChange: (Int) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
+    useExpressive: Boolean,
+    onExpressiveChange: (Boolean) -> Unit,
     onColorPickerOpen: () -> Unit,
     onPercentChange: (Float) -> Unit,
     onSensitivityAChange: (Float) -> Unit,
@@ -118,12 +123,21 @@ fun SettingsScreen(
         }
 
         item {
+            AboutSection(
+                language = language,
+                onLanguageChange = onLanguageChange
+            )
+        }
+
+        item {
             AppearanceSection(
                 themeMode = themeMode,
                 useDynamicColor = useDynamicColor,
+                useExpressive = useExpressive,
                 seedColorLong = seedColorLong,
                 onThemeChange = onThemeChange,
                 onDynamicColorChange = onDynamicColorChange,
+                onExpressiveChange = onExpressiveChange,
                 onColorPickerOpen = onColorPickerOpen
             )
         }

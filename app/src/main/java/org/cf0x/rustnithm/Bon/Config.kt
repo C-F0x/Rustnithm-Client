@@ -2,7 +2,10 @@ package org.cf0x.rustnithm.Bon
 
 import android.app.Application
 import android.net.Uri
-import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,15 +16,16 @@ import kotlinx.coroutines.launch
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
 
-class BonViewModel(
+class Config(
     application: Application,
     private val dataManager: DataManager,
     private val haptic: Haptic
 ) : AndroidViewModel(application) {
     private val context get() = getApplication<Application>()
-
+    val language: StateFlow<String> = dataManager.language
     val themeMode: StateFlow<Int> = dataManager.themeMode
     val useDynamicColor: StateFlow<Boolean> = dataManager.useDynamicColor
+    val useExpressive: StateFlow<Boolean> = dataManager.useExpressive
     val seedColor: StateFlow<Long> = dataManager.seedColor
     val percentPage: StateFlow<Float> = dataManager.percentPage
     val multiA: StateFlow<Float> = dataManager.multiA
@@ -68,8 +72,10 @@ class BonViewModel(
         }
     }
 
+    fun updateLanguage(lang: String) = dataManager.updateLanguage(lang)
     fun updateTheme(index: Int) = dataManager.updateThemeMode(index)
     fun updateDynamicColor(enabled: Boolean) = dataManager.updateUseDynamicColor(enabled)
+    fun updateUseExpressive(enabled: Boolean) = dataManager.updateUseExpressive(enabled)
     fun updateSeedColor(color: Long) = dataManager.updateSeedColor(color)
     fun updatePercent(value: Float) = dataManager.updatePercentPage(value)
     fun updateSensitivityA(value: Float) = dataManager.updateMultiA(value)

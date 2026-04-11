@@ -12,7 +12,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -31,16 +35,18 @@ fun Bon() {
 
     val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
 
-    val config: BonViewModel = remember {
-        BonViewModel(
+    val config: Config = remember {
+        Config(
             context.applicationContext as Application,
             dataManager,
             haptic
         )
     }
 
+    val language by config.language.collectAsState(initial = "system")
     val themeMode by config.themeMode.collectAsState(initial = 0)
     val useDynamicColor by config.useDynamicColor.collectAsState(initial = true)
+    val useExpressive by config.useExpressive.collectAsState(initial = false)
     val seedColorLong by config.seedColor.collectAsState(initial = 0L)
     val percentPage by config.percentPage.collectAsState(initial = 0.5f)
     val multiA by config.multiA.collectAsState(initial = 0.05f)
@@ -77,9 +83,13 @@ fun Bon() {
     )
 
     SettingsScreen(
+        language = language,
+        onLanguageChange = { config.updateLanguage(it) },
         themeMode = themeMode,
         useDynamicColor = useDynamicColor,
         onDynamicColorChange = { config.updateDynamicColor(it) },
+        useExpressive = useExpressive,
+        onExpressiveChange = { config.updateUseExpressive(it) },
         seedColorLong = seedColorLong,
         percentPage = percentPage,
         multiA = multiA,

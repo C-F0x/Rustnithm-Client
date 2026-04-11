@@ -3,8 +3,10 @@ package org.cf0x.rustnithm.Bon.Section
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +25,7 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -35,13 +38,15 @@ import org.cf0x.rustnithm.Bon.ToggleSettingItem
 fun AppearanceSection(
     themeMode: Int,
     useDynamicColor: Boolean,
+    useExpressive: Boolean,
     seedColorLong: Long,
     onThemeChange: (Int) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
+    onExpressiveChange: (Boolean) -> Unit,
     onColorPickerOpen: () -> Unit
 ) {
     SettingsGroup(title = "Appearance") {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
                 val options = listOf("Light", "Dark", "System")
                 options.forEachIndexed { index, label ->
@@ -55,12 +60,30 @@ fun AppearanceSection(
 
             Spacer(Modifier.height(16.dp))
 
-            ToggleSettingItem(
-                label = "Dynamic Color",
-                supportingText = "Material You tones",
-                checked = useDynamicColor,
-                onCheckedChange = onDynamicColorChange
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    ToggleSettingItem(
+                        label = "Dynamic Color",
+                        supportingText = "Material You tones",
+                        checked = useDynamicColor,
+                        onCheckedChange = onDynamicColorChange
+                    )
+                }
+                Box(modifier = Modifier.weight(1f)) {
+                    ToggleSettingItem(
+                        label = "Expressive",
+                        supportingText = "MD3 spring & shapes",
+                        checked = useExpressive,
+                        onCheckedChange = onExpressiveChange
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
 
             val isCustomEnabled = !useDynamicColor
             val customBackgroundColor = if (isCustomEnabled) {
@@ -77,11 +100,14 @@ fun AppearanceSection(
                 headlineContent = {
                     Text(
                         "Skin Seed Color",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isCustomEnabled) 1f else 0.38f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(
+                            alpha = if (isCustomEnabled) 1f else 0.38f
+                        )
                     )
                 },
                 leadingContent = {
-                    val previewColor = if (isCustomEnabled) Color(seedColorLong) else MaterialTheme.colorScheme.primary
+                    val previewColor = if (isCustomEnabled) Color(seedColorLong)
+                    else MaterialTheme.colorScheme.primary
                     Box(
                         Modifier
                             .size(40.dp)

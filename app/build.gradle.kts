@@ -110,6 +110,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.palette.ktx)
     implementation(libs.coil.compose)
+    implementation(libs.androidx.appcompat)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

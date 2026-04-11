@@ -41,8 +41,10 @@ class DataManager(context: Context) : ViewModel() {
     private val dataStore = context.dataStore
 
     private object PreferenceKeys {
+        val LANGUAGE = stringPreferencesKey("language")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val THEME_MODE = intPreferencesKey("theme_mode")
+        val USE_EXPRESSIVE = booleanPreferencesKey("use_expressive")
         val ENABLE_VIBRATION = booleanPreferencesKey("enable_vibration")
         val PERCENT_PAGE = floatPreferencesKey("percent_page")
         val MULTI_A = floatPreferencesKey("multi_a")
@@ -65,7 +67,9 @@ class DataManager(context: Context) : ViewModel() {
     }
 
     private companion object {
+        const val DEFAULT_LANGUAGE = "system"
         const val DEFAULT_USE_DYNAMIC_COLOR = true
+        const val DEFAULT_USE_EXPRESSIVE = false
         const val DEFAULT_THEME_MODE = 2
         const val DEFAULT_ENABLE_VIBRATION = true
         const val DEFAULT_PERCENT_PAGE = 0.5f
@@ -94,11 +98,20 @@ class DataManager(context: Context) : ViewModel() {
             }
         }
     }
+    val language: StateFlow<String> = dataStore.data
+        .map { it[PreferenceKeys.LANGUAGE] ?: DEFAULT_LANGUAGE }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_LANGUAGE)
+
     val useDynamicColor: StateFlow<Boolean> = dataStore.data
         .map { preferences ->
             preferences[PreferenceKeys.USE_DYNAMIC_COLOR] ?: DEFAULT_USE_DYNAMIC_COLOR
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_USE_DYNAMIC_COLOR)
+
+    val useExpressive: StateFlow<Boolean> = dataStore.data
+        .map { it[PreferenceKeys.USE_EXPRESSIVE] ?: DEFAULT_USE_EXPRESSIVE }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_USE_EXPRESSIVE)
+
     val targetIp: StateFlow<String> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.TARGET_IP] ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -175,6 +188,12 @@ class DataManager(context: Context) : ViewModel() {
         .map { it[PreferenceKeys.FLICK_ONCE] ?: DEFAULT_FLICK_ONCE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_FLICK_ONCE)
 
+    fun updateLanguage(lang: String) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.LANGUAGE] = lang }
+        }
+    }
+
     fun updateBackgroundAndPalette(uri: Uri, context: Context) {
         viewModelScope.launch {
             dataStore.edit { preferences ->
@@ -202,6 +221,13 @@ class DataManager(context: Context) : ViewModel() {
             dataStore.edit { it[PreferenceKeys.USE_DYNAMIC_COLOR] = enabled }
         }
     }
+
+    fun updateUseExpressive(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.USE_EXPRESSIVE] = enabled }
+        }
+    }
+
     fun updateTargetIp(ip: String) {
         viewModelScope.launch {
             dataStore.edit { it[PreferenceKeys.TARGET_IP] = ip }

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Rustnithm</string>
-    <string name="about_tagline">Built with Kotlin &amp; Rust</string>
+    <string name="about_tagline">由 Kotlin 与 Rust 构建</string>
     <string name="about_repo">C-F0x/Rustnithm-Client</string>
-    <string name="about_repo_desc">Built with Kotlin &amp; Rust</string>
-    <string name="lang_select">Language</string>
+    <string name="about_repo_desc">由 Kotlin 与 Rust 构建</string>
+    <string name="lang_select">语言</string>
     <string name="lang_english">English</string>
     <string name="lang_schinese">简体中文</string>
     <string name="lang_tchinese">繁體中文</string>

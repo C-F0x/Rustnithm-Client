@@ -4,18 +4,24 @@ import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
-/**
- * 皮肤颜色引擎，用于 Canvas 绘图层的颜色派生
- */
+val LocalExpressive = compositionLocalOf { false }
+
 class SkinColorEngine(
     val seedColor: Color,
     val isDark: Boolean
@@ -39,51 +45,109 @@ class SkinColorEngine(
     }
 }
 
-/**
- * 核心色板生成函数：根据种子色派生全套 M3 色调
- */
-private fun generateColorScheme(seed: Color, isDark: Boolean): ColorScheme {
-    return if (isDark) {
-        darkColorScheme(
-            primary = seed,
-            onPrimary = lerp(seed, Color.Black, 0.8f),
-            primaryContainer = lerp(seed, Color.Black, 0.6f),
-            onPrimaryContainer = lerp(seed, Color.White, 0.9f),
+private fun generateColorScheme(
+    seed: Color,
+    isDark: Boolean,
+    expressive: Boolean = false
+): ColorScheme {
+    val boost = if (expressive) 0.12f else 0f
 
-            secondary = lerp(seed, Color.Gray, 0.4f),
+    return if (isDark) {
+        val primary = lerp(seed, Color.White, boost)
+        val tertiary = lerp(
+            lerp(seed, Color(0xFF00E5FF), if (expressive) 0.35f else 0.2f),
+            Color.White,
+            boost
+        )
+        val secondaryContainer = if (expressive)
+            lerp(seed, Color(0xFF1A1A2E), 0.45f)
+        else
+            lerp(seed, Color.Black, 0.7f)
+
+        darkColorScheme(
+            primary = primary,
+            onPrimary = lerp(seed, Color.Black, 0.8f),
+            primaryContainer = lerp(seed, Color.Black, if (expressive) 0.45f else 0.6f),
+            onPrimaryContainer = lerp(seed, Color.White, if (expressive) 0.95f else 0.9f),
+
+            secondary = lerp(seed, Color.Gray, if (expressive) 0.25f else 0.4f),
             onSecondary = Color.Black,
-            secondaryContainer = lerp(seed, Color.Black, 0.7f),
+            secondaryContainer = secondaryContainer,
             onSecondaryContainer = lerp(seed, Color.White, 0.8f),
 
-            tertiary = lerp(seed, Color.Cyan, 0.2f),
+            tertiary = tertiary,
             onTertiary = Color.Black,
+            tertiaryContainer = lerp(tertiary, Color.Black, if (expressive) 0.4f else 0.6f),
+            onTertiaryContainer = lerp(tertiary, Color.White, 0.9f),
 
-            surface = Color(0xFF111114),
+            surface = if (expressive) Color(0xFF0E0E18) else Color(0xFF111114),
             onSurface = Color(0xFFE6E1E5),
-            surfaceVariant = lerp(seed, Color.Black, 0.85f),
+            surfaceVariant = lerp(seed, Color.Black, if (expressive) 0.75f else 0.85f),
             onSurfaceVariant = Color(0xFFCAC4D0),
+            surfaceTint = if (expressive) primary.copy(alpha = 0.08f) else Color.Transparent,
 
-            outline = lerp(seed, Color.Gray, 0.5f),
+            outline = lerp(seed, Color.Gray, if (expressive) 0.35f else 0.5f),
+            outlineVariant = lerp(seed, Color.Black, if (expressive) 0.6f else 0.75f),
             error = Color(0xFFF2B8B5)
         )
     } else {
-        lightColorScheme(
-            primary = seed,
-            onPrimary = Color.White,
-            primaryContainer = lerp(seed, Color.White, 0.8f),
-            onPrimaryContainer = lerp(seed, Color.Black, 0.7f),
+        val primary = lerp(seed, Color.Black, boost * 0.5f)
+        val tertiary = lerp(seed, Color(0xFF0055CC), if (expressive) 0.4f else 0.15f)
 
-            secondary = lerp(seed, Color.Gray, 0.3f),
+        lightColorScheme(
+            primary = primary,
+            onPrimary = Color.White,
+            primaryContainer = lerp(seed, Color.White, if (expressive) 0.65f else 0.8f),
+            onPrimaryContainer = lerp(seed, Color.Black, if (expressive) 0.8f else 0.7f),
+
+            secondary = lerp(seed, Color.Gray, if (expressive) 0.15f else 0.3f),
             onSecondary = Color.White,
-            secondaryContainer = lerp(seed, Color.White, 0.9f),
+            secondaryContainer = lerp(seed, Color.White, if (expressive) 0.8f else 0.9f),
+            onSecondaryContainer = lerp(seed, Color.Black, 0.7f),
+
+            tertiary = tertiary,
+            onTertiary = Color.White,
+            tertiaryContainer = lerp(tertiary, Color.White, if (expressive) 0.7f else 0.85f),
+            onTertiaryContainer = lerp(tertiary, Color.Black, 0.7f),
 
             surface = Color(0xFFFFFBFE),
             onSurface = Color(0xFF1C1B1F),
-            surfaceVariant = lerp(seed, Color.White, 0.95f),
+            surfaceVariant = lerp(seed, Color.White, if (expressive) 0.88f else 0.95f),
             onSurfaceVariant = Color(0xFF49454F),
+            surfaceTint = if (expressive) primary.copy(alpha = 0.06f) else Color.Transparent,
 
-            outline = lerp(seed, Color.Gray, 0.4f),
+            outline = lerp(seed, Color.Gray, if (expressive) 0.25f else 0.4f),
+            outlineVariant = lerp(seed, Color.White, if (expressive) 0.6f else 0.75f),
             error = Color(0xFFB3261E)
+        )
+    }
+}
+
+private fun applyExpressiveBoost(scheme: ColorScheme, isDark: Boolean): ColorScheme {
+    return if (isDark) {
+        scheme.copy(
+            primaryContainer = lerp(scheme.primaryContainer, Color.Black, 0.15f),
+            onPrimaryContainer = lerp(scheme.onPrimaryContainer, Color.White, 0.1f),
+            secondaryContainer = lerp(scheme.secondaryContainer, scheme.primary, 0.08f),
+            tertiaryContainer = lerp(scheme.tertiaryContainer, Color.Black, 0.1f),
+            onTertiaryContainer = lerp(scheme.onTertiaryContainer, Color.White, 0.1f),
+            surfaceVariant = lerp(scheme.surfaceVariant, scheme.primary, 0.06f),
+            surface = lerp(scheme.surface, scheme.primary, 0.04f),
+            surfaceTint = scheme.primary.copy(alpha = 0.08f),
+            outline = lerp(scheme.outline, scheme.primary, 0.2f),
+            outlineVariant = lerp(scheme.outlineVariant, scheme.primary, 0.15f),
+        )
+    } else {
+        scheme.copy(
+            primaryContainer = lerp(scheme.primaryContainer, scheme.primary, 0.12f),
+            onPrimaryContainer = lerp(scheme.onPrimaryContainer, Color.Black, 0.08f),
+            secondaryContainer = lerp(scheme.secondaryContainer, scheme.primary, 0.06f),
+            tertiaryContainer = lerp(scheme.tertiaryContainer, scheme.tertiary, 0.1f),
+            onTertiaryContainer = lerp(scheme.onTertiaryContainer, Color.Black, 0.05f),
+            surfaceVariant = lerp(scheme.surfaceVariant, scheme.primary, 0.05f),
+            surfaceTint = scheme.primary.copy(alpha = 0.06f),
+            outline = lerp(scheme.outline, scheme.primary, 0.2f),
+            outlineVariant = lerp(scheme.outlineVariant, scheme.primary, 0.1f),
         )
     }
 }
@@ -92,6 +156,7 @@ private fun generateColorScheme(seed: Color, isDark: Boolean): ColorScheme {
 fun RustnithmTheme(
     themeMode: Int = 2,
     useDynamicColor: Boolean = true,
+    useExpressive: Boolean = false,
     customSeedColor: Color? = null,
     content: @Composable () -> Unit
 ) {
@@ -106,12 +171,13 @@ fun RustnithmTheme(
 
     val colorScheme: ColorScheme = when {
         useDynamicColor -> {
-            if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            val base = if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (useExpressive) applyExpressiveBoost(base, isDark) else base
         }
-        else -> {
-            generateColorScheme(finalSeed, isDark)
-        }
+        else -> generateColorScheme(finalSeed, isDark, useExpressive)
     }
+
+    val shapes = if (useExpressive) ExpressiveShapes else StandardShapes
 
     val view = LocalView.current
     if (!view.isInEditMode) {
@@ -125,9 +191,12 @@ fun RustnithmTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalExpressive provides useExpressive) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            shapes = shapes,
+            content = content
+        )
+    }
 }
