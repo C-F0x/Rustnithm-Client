@@ -1,0 +1,110 @@
+package org.cf0x.rustnithm.Bon.Section
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import org.cf0x.rustnithm.Bon.SettingsGroup
+import org.cf0x.rustnithm.Bon.ToggleSettingItem
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppearanceSection(
+    themeMode: Int,
+    useDynamicColor: Boolean,
+    seedColorLong: Long,
+    onThemeChange: (Int) -> Unit,
+    onDynamicColorChange: (Boolean) -> Unit,
+    onColorPickerOpen: () -> Unit
+) {
+    SettingsGroup(title = "Appearance") {
+        Column(modifier = Modifier.padding(16.dp)) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                val options = listOf("Light", "Dark", "System")
+                options.forEachIndexed { index, label ->
+                    SegmentedButton(
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                        onClick = { onThemeChange(index) },
+                        selected = themeMode == index
+                    ) { Text(label) }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            ToggleSettingItem(
+                label = "Dynamic Color",
+                supportingText = "Material You tones",
+                checked = useDynamicColor,
+                onCheckedChange = onDynamicColorChange
+            )
+
+            val isCustomEnabled = !useDynamicColor
+            val customBackgroundColor = if (isCustomEnabled) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+            } else {
+                MaterialTheme.colorScheme.surfaceContainerLow
+            }
+
+            ListItem(
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.large)
+                    .clickable(enabled = isCustomEnabled) { onColorPickerOpen() }
+                    .background(customBackgroundColor),
+                headlineContent = {
+                    Text(
+                        "Skin Seed Color",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (isCustomEnabled) 1f else 0.38f)
+                    )
+                },
+                leadingContent = {
+                    val previewColor = if (isCustomEnabled) Color(seedColorLong) else MaterialTheme.colorScheme.primary
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(previewColor)
+                            .border(
+                                width = if (isCustomEnabled) 1.dp else 1.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                                shape = CircleShape
+                            )
+                    )
+                },
+                trailingContent = {
+                    if (isCustomEnabled) {
+                        Icon(
+                            Icons.Default.Palette,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+            )
+        }
+    }
+}

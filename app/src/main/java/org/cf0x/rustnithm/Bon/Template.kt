@@ -35,6 +35,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
+fun BonDialogScaffold(
+    title: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    confirmLabel: String = "Confirm",
+    dismissLabel: String = "Cancel",
+    content: @Composable ColumnScope.() -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        confirmButton = {
+            TextButton(onClick = {
+                onConfirm()
+            }) {
+                Text(confirmLabel, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(dismissLabel)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                content = content
+            )
+        }
+    )
+}
+
+@Composable
 fun SettingsGroup(
     title: String,
     modifier: Modifier = Modifier,
@@ -130,47 +164,36 @@ fun PhysicsDialDialog(
     val safeValue = initialValue.coerceIn(range)
     var currentValue by remember { mutableIntStateOf(safeValue) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(currentValue) }) {
-                Text("Confirm", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                WavyoidDial(
-                    modifier = Modifier.size(280.dp),
-                    configs = listOf(
-                        WavyoidConfig(
-                            options = range.toList(),
-                            initialSelectedIndex = (currentValue - range.first).coerceIn(0, range.count() - 1),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    ),
-                    isFocusMode = false,
-                    coreTextFormatter = { it.firstOrNull()?.toString() ?: "" },
-                    onValuesChange = { _, _, selectedValue ->
-                        currentValue = selectedValue as Int
-                    }
+    BonDialogScaffold(
+        title = title,
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(currentValue) }
+    ) {
+        WavyoidDial(
+            modifier = Modifier
+                .size(280.dp)
+                .align(Alignment.CenterHorizontally),
+            configs = listOf(
+                WavyoidConfig(
+                    options = range.toList(),
+                    initialSelectedIndex = (currentValue - range.first).coerceIn(0, range.count() - 1),
+                    color = MaterialTheme.colorScheme.primary
                 )
+            ),
+            isFocusMode = false,
+            coreTextFormatter = { it.firstOrNull()?.toString() ?: "" },
+            onValuesChange = { _, _, selectedValue ->
+                currentValue = selectedValue as Int
+            }
+        )
 
-                Text(
-                    text = "Drag the wave ring to adjust",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    )
+        Text(
+            text = "Drag the wave ring to adjust",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
 }
 
 @Composable
@@ -206,7 +229,11 @@ fun ExpressiveSlider(
 }
 
 @Composable
-fun ColorPickerDialog(initialColor: Color, onDismiss: () -> Unit, onConfirm: (Long) -> Unit) {
+fun ColorPickerDialog(
+    initialColor: Color,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
     val hsv = remember {
         val res = FloatArray(3)
         android.graphics.Color.colorToHSV(initialColor.toArgb(), res)
@@ -219,27 +246,22 @@ fun ColorPickerDialog(initialColor: Color, onDismiss: () -> Unit, onConfirm: (Lo
         Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, value)))
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = { onConfirm(currentColor.toArgb().toLong() and 0xFFFFFFFFL) }) {
-                Text("Apply", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-        title = { Text("Pick Accent Color") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth().height(80.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = currentColor,
-                    shadowElevation = 2.dp
-                ) {}
-                ExpressiveSlider("Hue", hue, 0f..360f, onValueChange = { hue = it })
-                ExpressiveSlider("Saturation", saturation, 0f..1f, onValueChange = { saturation = it })
-                ExpressiveSlider("Brightness", value, 0f..1f, onValueChange = { value = it })
-            }
-        }
-    )
+    BonDialogScaffold(
+        title = "Pick Accent Color",
+        confirmLabel = "Apply",
+        onDismiss = onDismiss,
+        onConfirm = { onConfirm(currentColor.toArgb().toLong() and 0xFFFFFFFFL) }
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = currentColor,
+            shadowElevation = 2.dp
+        ) {}
+        ExpressiveSlider("Hue", hue, 0f..360f, onValueChange = { hue = it })
+        ExpressiveSlider("Saturation", saturation, 0f..1f, onValueChange = { saturation = it })
+        ExpressiveSlider("Brightness", value, 0f..1f, onValueChange = { value = it })
+    }
 }
