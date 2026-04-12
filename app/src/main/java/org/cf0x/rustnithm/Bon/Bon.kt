@@ -19,10 +19,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
+import org.cf0x.rustnithm.R
 
 @Composable
 fun Bon() {
@@ -170,8 +172,8 @@ fun Bon() {
     if (config.showResetDialog) {
         AlertDialog(
             onDismissRequest = { config.showResetDialog = false },
-            title = { Text("Reset All?") },
-            text = { Text("This will restore all configurations (including keys and skin) to factory defaults.") },
+            title = { Text(stringResource(R.string.reset_all_title)) },
+            text = { Text(stringResource(R.string.reset_all_message)) },
             confirmButton = {
                 Button(
                     onClick = { config.resetAllSettings() },
@@ -179,10 +181,10 @@ fun Bon() {
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError
                     )
-                ) { Text("Reset Now") }
+                ) { Text(stringResource(R.string.reset_now)) }
             },
             dismissButton = {
-                TextButton(onClick = { config.showResetDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { config.showResetDialog = false }) { Text(stringResource(R.string.cancel)) }
             }
         )
     }

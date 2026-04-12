@@ -48,18 +48,17 @@
     <string name="dial_coarse_fine_hint">중앙을 탭하여 거친 조정/미세 조정 전환</string>
     <string name="physics_diagnostics_title">물리 파라미터 진단</string>
     <string name="acknowledge">확인했습니다</string>
-    <string name="physics_formula_note">참고: Δ = H - 1024.\nEq >= T이면 저장이 차단됩니다.</string>
-    <string name="formula_cond_z_gt"> Z > Z_last 인 경우:</string>
+    <string name="physics_formula_note">참고: Δ = H - 1024. 일명 "누적 변화값"\nEq >= T이면 저장이 차단됩니다. 일명 "절대 트리거 안 됨"</string>
+    <string name="formula_cond_z_gt"> Z > Z_last 일명 "위로 스와이프"인 경우:</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
-    <string name="formula_cond_z_lt"> Z &lt; Z_last 인 경우:</string>
+    <string name="formula_cond_z_lt"> Z &lt; Z_last 일명 "아래로 스와이프"인 경우:</string>
     <string name="formula_result_h_minus_d">H_next = H - D</string>
-    <string name="formula_cond_delta_gte_t"> |Δ| >= T 인 경우:</string>
+    <string name="formula_cond_delta_gte_t"> |Δ| >= T 일명 "트리거"인 경우:</string>
     <string name="formula_result_signal">Signal = 1, H = H_default</string>
-    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T 인 경우:</string>
+    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T 일명 "하향 감쇠"인 경우:</string>
     <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
-    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 인 경우:</string>
+    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 일명 "상향 감쇠"인 경우:</string>
     <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
-
     <!-- Security -->
     <string name="security_title">보안</string>
     <string name="access_codes_label">액세스 코드 (20자리)</string>
@@ -74,4 +73,10 @@
     <string name="color_hue">색조</string>
     <string name="color_saturation">채도</string>
     <string name="color_brightness">밝기</string>
+    <string name="import_skin">스킨 가져오기</string>
+    <string name="delete_skin">스킨 삭제</string>
+    <string name="factory_reset_all">전체 설정 초기화</string>
+    <string name="reset_all_title">모두 초기화하시겠습니까?</string>
+    <string name="reset_all_message">키와 스킨을 포함한 모든 설정이 공장 초기화됩니다.</string>
+    <string name="reset_now">지금 초기화</string>
 </resources>

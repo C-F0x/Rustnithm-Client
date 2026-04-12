@@ -48,16 +48,16 @@
     <string name="dial_coarse_fine_hint">Appuyez au centre pour basculer Grossier/Fin</string>
     <string name="physics_diagnostics_title">Diagnostic physique</string>
     <string name="acknowledge">Compris</string>
-    <string name="physics_formula_note">Note : Δ = H - 1024.\nLe système bloquera la sauvegarde si Eq >= T.</string>
-    <string name="formula_cond_z_gt"> Si Z > Z_last :</string>
+    <string name="physics_formula_note">Note : Δ = H - 1024. alias « Valeur de changement cumulée »\nLe système bloquera la sauvegarde si Eq >= T. alias « Ne jamais déclencher »</string>
+    <string name="formula_cond_z_gt"> Si Z > Z_last alias « Glissement vers le haut » :</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
-    <string name="formula_cond_z_lt"> Si Z &lt; Z_last :</string>
+    <string name="formula_cond_z_lt"> Si Z &lt; Z_last alias « Glissement vers le bas » :</string>
     <string name="formula_result_h_minus_d">H_next = H - D</string>
-    <string name="formula_cond_delta_gte_t"> Si |Δ| >= T :</string>
+    <string name="formula_cond_delta_gte_t"> Si |Δ| >= T alias « Déclenchement » :</string>
     <string name="formula_result_signal">Signal = 1, H = H_default</string>
-    <string name="formula_cond_delta_pos"> Si 0 &lt; Δ &lt; T :</string>
+    <string name="formula_cond_delta_pos"> Si 0 &lt; Δ &lt; T alias « Amortissement descendant » :</string>
     <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
-    <string name="formula_cond_delta_neg"> Si -T &lt; Δ &lt; 0 :</string>
+    <string name="formula_cond_delta_neg"> Si -T &lt; Δ &lt; 0 alias « Amortissement montant » :</string>
     <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
 
     <!-- Security -->
@@ -74,4 +74,10 @@
     <string name="color_hue">Teinte</string>
     <string name="color_saturation">Saturation</string>
     <string name="color_brightness">Luminosité</string>
+    <string name="import_skin">Importer le skin</string>
+    <string name="delete_skin">Supprimer le skin</string>
+    <string name="factory_reset_all">Réinitialiser tous les paramètres</string>
+    <string name="reset_all_title">Tout réinitialiser ?</string>
+    <string name="reset_all_message">Toutes les configurations (y compris les touches et le skin) seront restaurées aux valeurs d\'usine.</string>
+    <string name="reset_now">Réinitialiser maintenant</string>
 </resources>

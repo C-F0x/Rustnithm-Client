@@ -48,16 +48,16 @@
     <string name="dial_coarse_fine_hint">Tap center to switch Coarse/Fine</string>
     <string name="physics_diagnostics_title">Physics Diagnostics</string>
     <string name="acknowledge">Acknowledge</string>
-    <string name="physics_formula_note">Note: Δ = H - 1024. \nSystem will block saving if Eq >= T.</string>
-    <string name="formula_cond_z_gt"> If Z > Z_last:</string>
+    <string name="physics_formula_note">Note: Δ = H - 1024. aka.Cumulative change value \nSystem will block saving if Eq >= T. aka.Never trigger </string>
+    <string name="formula_cond_z_gt"> If Z > Z_last aka.Swipe up:</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
-    <string name="formula_cond_z_lt"> If Z &lt; Z_last:</string>
+    <string name="formula_cond_z_lt"> If Z &lt; Z_last aka.Swipe down :</string>
     <string name="formula_result_h_minus_d">H_next = H - D</string>
-    <string name="formula_cond_delta_gte_t"> If |Δ| >= T:</string>
+    <string name="formula_cond_delta_gte_t"> If |Δ| >= T aka.Trigger :</string>
     <string name="formula_result_signal">Signal = 1, H = H_default</string>
-    <string name="formula_cond_delta_pos"> If 0 &lt; Δ &lt; T:</string>
+    <string name="formula_cond_delta_pos"> If 0 &lt; Δ &lt; T aka.Down damping:</string>
     <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
-    <string name="formula_cond_delta_neg"> If -T &lt; Δ &lt; 0:</string>
+    <string name="formula_cond_delta_neg"> If -T &lt; Δ &lt; 0 aka.Up damping:</string>
     <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
 
     <!-- Security -->
@@ -74,4 +74,10 @@
     <string name="color_hue">Hue</string>
     <string name="color_saturation">Saturation</string>
     <string name="color_brightness">Brightness</string>
+    <string name="import_skin">Import Skin</string>
+    <string name="delete_skin">Clear Skin</string>
+    <string name="factory_reset_all">Factory Reset All Settings</string>
+    <string name="reset_all_title">Reset All?</string>
+    <string name="reset_all_message">This will restore all configurations (including keys and skin) to factory defaults.</string>
+    <string name="reset_now">Reset Now</string>
 </resources>

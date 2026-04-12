@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.cf0x.rustnithm.Bon.Section.AboutSection
@@ -37,6 +38,7 @@ import org.cf0x.rustnithm.Bon.Section.AccesscodeSection
 import org.cf0x.rustnithm.Bon.Section.AppearanceSection
 import org.cf0x.rustnithm.Bon.Section.FlickSection
 import org.cf0x.rustnithm.Bon.Section.InteractionSection
+import org.cf0x.rustnithm.R
 
 @Composable
 fun SettingsScreen(
@@ -214,7 +216,7 @@ fun SettingsScreen(
                 ) {
                     Icon(Icons.Default.FileDownload, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Import Skin")
+                    Text(stringResource(R.string.import_skin))
                 }
                 OutlinedButton(
                     onClick = onDeleteClick,
@@ -226,7 +228,7 @@ fun SettingsScreen(
                 ) {
                     Icon(Icons.Default.DeleteForever, null)
                     Spacer(Modifier.width(8.dp))
-                    Text("Clear Skin")
+                    Text(stringResource(R.string.delete_skin))
                 }
             }
         }
@@ -245,7 +247,7 @@ fun SettingsScreen(
             ) {
                 Icon(Icons.Default.Warning, null)
                 Spacer(Modifier.width(8.dp))
-                Text("Factory Reset All Settings")
+                Text(stringResource(R.string.factory_reset_all))
             }
         }
     }

@@ -48,16 +48,16 @@
     <string name="dial_coarse_fine_hint">中央をタップして粗調整／微調整を切り替え</string>
     <string name="physics_diagnostics_title">物理パラメータ診断</string>
     <string name="acknowledge">了解</string>
-    <string name="physics_formula_note">注：Δ = H - 1024。\nEq >= T の場合、保存がブロックされます。</string>
-    <string name="formula_cond_z_gt"> Z > Z_last の場合：</string>
+    <string name="physics_formula_note">注：Δ = H - 1024。別名「累積変化値」\nEq >= T の場合、保存がブロックされます。別名「トリガーしない」</string>
+    <string name="formula_cond_z_gt"> Z > Z_last 別名「上スワイプ」の場合：</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
-    <string name="formula_cond_z_lt"> Z &lt; Z_last の場合：</string>
+    <string name="formula_cond_z_lt"> Z &lt; Z_last 別名「下スワイプ」の場合：</string>
     <string name="formula_result_h_minus_d">H_next = H - D</string>
-    <string name="formula_cond_delta_gte_t"> |Δ| >= T の場合：</string>
+    <string name="formula_cond_delta_gte_t"> |Δ| >= T 別名「トリガー」の場合：</string>
     <string name="formula_result_signal">Signal = 1, H = H_default</string>
-    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T の場合：</string>
+    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T 別名「下方減衰」の場合：</string>
     <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
-    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 の場合：</string>
+    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 別名「上方減衰」の場合：</string>
     <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
 
     <!-- Security -->
@@ -74,4 +74,10 @@
     <string name="color_hue">色相</string>
     <string name="color_saturation">彩度</string>
     <string name="color_brightness">明度</string>
+    <string name="import_skin">スキンをインポート</string>
+    <string name="delete_skin">スキンを削除</string>
+    <string name="factory_reset_all">すべての設定を初期化</string>
+    <string name="reset_all_title">すべてリセットしますか？</string>
+    <string name="reset_all_message">キーとスキンを含むすべての設定が出荷時のデフォルトに戻ります。</string>
+    <string name="reset_now">今すぐリセット</string>
 </resources>

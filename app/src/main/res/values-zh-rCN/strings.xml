@@ -48,16 +48,16 @@
     <string name="dial_coarse_fine_hint">点击中心切换粗调/细调</string>
     <string name="physics_diagnostics_title">物理参数诊断</string>
     <string name="acknowledge">知道了</string>
-    <string name="physics_formula_note">注：Δ = H - 1024。\n若 Eq >= T，系统将阻止保存。</string>
-    <string name="formula_cond_z_gt"> 若 Z > Z_last：</string>
+    <string name="physics_formula_note">注：Δ = H - 1024。即"累计变化值"\n若 Eq >= T，系统将阻止保存。即"永不触发"</string>
+    <string name="formula_cond_z_gt"> 若 Z > Z_last 即"上滑"：</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
-    <string name="formula_cond_z_lt"> 若 Z &lt; Z_last：</string>
+    <string name="formula_cond_z_lt"> 若 Z &lt; Z_last 即"下滑"：</string>
     <string name="formula_result_h_minus_d">H_next = H - D</string>
-    <string name="formula_cond_delta_gte_t"> 若 |Δ| >= T：</string>
+    <string name="formula_cond_delta_gte_t"> 若 |Δ| >= T 即"触发"：</string>
     <string name="formula_result_signal">Signal = 1, H = H_default</string>
-    <string name="formula_cond_delta_pos"> 若 0 &lt; Δ &lt; T：</string>
+    <string name="formula_cond_delta_pos"> 若 0 &lt; Δ &lt; T 即"下阻尼"：</string>
     <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
-    <string name="formula_cond_delta_neg"> 若 -T &lt; Δ &lt; 0：</string>
+    <string name="formula_cond_delta_neg"> 若 -T &lt; Δ &lt; 0 即"上阻尼"：</string>
     <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
 
     <!-- Security -->
@@ -74,4 +74,10 @@
     <string name="color_hue">色相</string>
     <string name="color_saturation">饱和度</string>
     <string name="color_brightness">亮度</string>
+    <string name="import_skin">导入皮肤</string>
+    <string name="delete_skin">清除皮肤</string>
+    <string name="factory_reset_all">恢复出厂设置</string>
+    <string name="reset_all_title">重置所有设置？</string>
+    <string name="reset_all_message">这将把所有配置（包括按键和皮肤）恢复为出厂默认值。</string>
+    <string name="reset_now">立即重置</string>
 </resources>
