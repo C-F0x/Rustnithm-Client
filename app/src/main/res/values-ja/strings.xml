@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About -->
+    <string name="about_tagline">Kotlin と Rust で構築</string>
+    <string name="about_repo_desc">Kotlin と Rust で構築</string>
+    <string name="lang_select">言語</string>
+    <string name="lang_english">English</string>
+    <string name="lang_schinese">简体中文</string>
+    <string name="lang_tchinese">繁體中文</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_french">Français</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">外観</string>
+    <string name="theme_light">ライト</string>
+    <string name="theme_dark">ダーク</string>
+    <string name="theme_system">システム設定に従う</string>
+    <string name="dynamic_color">ダイナミックカラー</string>
+    <string name="expressive">エクスプレッシブ</string>
+    <string name="skin_seed_color">テーマシードカラー</string>
+
+    <!-- Interaction -->
+    <string name="interaction_title">操作</string>
+    <string name="split_ratio">分割比率</string>
+    <string name="air_sensitivity">エア感度</string>
+    <string name="slide_sensitivity">スライド感度</string>
+    <string name="air_mode_native">ネイティブ</string>
+    <string name="air_mode_flick">フリック</string>
+    <string name="air_mode_auto">自動</string>
+    <string name="frequency">周波数</string>
+    <string name="haptic_feedback">触覚フィードバック</string>
+    <string name="haptic_tactile_response">触覚応答</string>
+    <string name="unsupported">非対応</string>
+
+    <!-- Flick -->
+    <string name="flick_physics_title">フリック物理パラメータ</string>
+    <string name="flick_once">シングルフリック</string>
+    <string name="tutorial">チュートリアル</string>
+    <string name="show_formula">数式を表示</string>
+    <string name="trigger_threshold">トリガー閾値</string>
+    <string name="eq_plus">イコライザ +</string>
+    <string name="eq_minus">イコライザ -</string>
+    <string name="step_up">ステップアップ</string>
+    <string name="step_down">ステップダウン</string>
+    <string name="flick_zones">フリックゾーン数</string>
+    <string name="invalid_physics_warning">無効な物理パラメータが検出されました。チュートリアルで数式を確認してください。</string>
+    <string name="dial_coarse_fine_hint">中央をタップして粗調整／微調整を切り替え</string>
+    <string name="physics_diagnostics_title">物理パラメータ診断</string>
+    <string name="acknowledge">了解</string>
+    <string name="physics_formula_note">注：Δ = H - 1024。\nEq >= T の場合、保存がブロックされます。</string>
+    <string name="formula_cond_z_gt"> Z > Z_last の場合：</string>
+    <string name="formula_result_h_plus_u">H_next = H + U</string>
+    <string name="formula_cond_z_lt"> Z &lt; Z_last の場合：</string>
+    <string name="formula_result_h_minus_d">H_next = H - D</string>
+    <string name="formula_cond_delta_gte_t"> |Δ| >= T の場合：</string>
+    <string name="formula_result_signal">Signal = 1, H = H_default</string>
+    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T の場合：</string>
+    <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
+    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 の場合：</string>
+    <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
+
+    <!-- Security -->
+    <string name="security_title">セキュリティ</string>
+    <string name="access_codes_label">アクセスコード（20桁）</string>
+    <string name="save_access_code">アクセスコードを保存</string>
+
+    <!-- Common / Scaffold -->
+    <string name="confirm">確認</string>
+    <string name="cancel">キャンセル</string>
+    <string name="apply">適用</string>
+    <string name="dial_wave_ring_hint">波形リングをドラッグして調整</string>
+    <string name="pick_accent_color_title">アクセントカラーを選択</string>
+    <string name="color_hue">色相</string>
+    <string name="color_saturation">彩度</string>
+    <string name="color_brightness">明度</string>
+</resources>

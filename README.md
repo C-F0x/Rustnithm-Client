@@ -7,6 +7,9 @@ Total built with Kotlin
 [Server](https://github.com/C-F0x/Rustnithm-Server)
 
 
+# About i18n
+pr welcome
+
 # Bug
 
 ToggleSync doesnt work
@@ -14,8 +17,6 @@ ToggleSync doesnt work
 
 
 # Todo-list
-
-i18n
 
 Sync with game LED
 

@@ -29,9 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.cf0x.rustnithm.Bon.SettingsGroup
 import org.cf0x.rustnithm.Bon.ToggleSettingItem
+import org.cf0x.rustnithm.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,10 +47,14 @@ fun AppearanceSection(
     onExpressiveChange: (Boolean) -> Unit,
     onColorPickerOpen: () -> Unit
 ) {
-    SettingsGroup(title = "Appearance") {
+    SettingsGroup(title = stringResource(R.string.appearance_title)) {
         Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 4.dp)) {
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                val options = listOf("Light", "Dark", "System")
+                val options = listOf(
+                    stringResource(R.string.theme_light),
+                    stringResource(R.string.theme_dark),
+                    stringResource(R.string.theme_system)
+                )
                 options.forEachIndexed { index, label ->
                     SegmentedButton(
                         shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
@@ -67,16 +73,14 @@ fun AppearanceSection(
             ) {
                 Box(modifier = Modifier.weight(1f)) {
                     ToggleSettingItem(
-                        label = "Dynamic Color",
-                        supportingText = "Material You tones",
+                        label = stringResource(R.string.dynamic_color),
                         checked = useDynamicColor,
                         onCheckedChange = onDynamicColorChange
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
                     ToggleSettingItem(
-                        label = "Expressive",
-                        supportingText = "MD3 spring & shapes",
+                        label = stringResource(R.string.expressive),
                         checked = useExpressive,
                         onCheckedChange = onExpressiveChange
                     )
@@ -99,7 +103,7 @@ fun AppearanceSection(
                     .background(customBackgroundColor),
                 headlineContent = {
                     Text(
-                        "Skin Seed Color",
+                        stringResource(R.string.skin_seed_color),
                         color = MaterialTheme.colorScheme.onSurface.copy(
                             alpha = if (isCustomEnabled) 1f else 0.38f
                         )

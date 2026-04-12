@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ import org.cf0x.rustnithm.Bon.SettingsGroup
 import org.cf0x.rustnithm.Bon.ToggleSettingItem
 import org.cf0x.rustnithm.Bon.WavyoidConfig
 import org.cf0x.rustnithm.Bon.WavyoidDial
+import org.cf0x.rustnithm.R
 
 @Composable
 fun FlickSection(
@@ -68,7 +70,7 @@ fun FlickSection(
     } else Modifier
 
     SettingsGroup(
-        title = "Flick Physics",
+        title = stringResource(R.string.flick_physics_title),
         modifier = errorModifier
     ) {
         Column {
@@ -78,7 +80,7 @@ fun FlickSection(
             ) {
                 Box(Modifier.weight(1f)) {
                     ToggleSettingItem(
-                        label = "Flick Once",
+                        label = stringResource(R.string.flick_once),
                         supportingText = null,
                         checked = flickOnce,
                         onCheckedChange = onFlickOnceChange
@@ -95,11 +97,11 @@ fun FlickSection(
                     modifier = Modifier
                         .weight(1f)
                         .clickable { onFormulaDialogToggle(true) },
-                    headlineContent = { Text("Tutorial") },
+                    headlineContent = { Text(stringResource(R.string.tutorial)) },
                     trailingContent = {
                         Icon(
                             Icons.AutoMirrored.Outlined.HelpOutline,
-                            contentDescription = "Show Formula",
+                            contentDescription = stringResource(R.string.show_formula),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     },
@@ -113,31 +115,31 @@ fun FlickSection(
                 color = MaterialTheme.colorScheme.outlineVariant
             )
 
-            ValueDialItemExtended("Trigger Threshold", flickThreshold, 0..160, 20, onFlickThresholdChange)
+            ValueDialItemExtended(stringResource(R.string.trigger_threshold), flickThreshold, 0..160, 20, onFlickThresholdChange)
 
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) {
-                    ValueDialItemExtended("Eq +", flickEqualizerPlus, 0..40, 5, onFlickEqualizerPlusChange)
+                    ValueDialItemExtended(stringResource(R.string.eq_plus), flickEqualizerPlus, 0..40, 5, onFlickEqualizerPlusChange)
                 }
                 Box(Modifier.weight(1f)) {
-                    ValueDialItemExtended("Eq -", flickEqualizerMinus, 0..40, 5, onFlickEqualizerMinusChange)
+                    ValueDialItemExtended(stringResource(R.string.eq_minus), flickEqualizerMinus, 0..40, 5, onFlickEqualizerMinusChange)
                 }
             }
 
             Row(Modifier.fillMaxWidth()) {
                 Box(Modifier.weight(1f)) {
-                    ValueDialItemExtended("Step Up", flickUp, 0..100, 10, onFlickUpChange)
+                    ValueDialItemExtended(stringResource(R.string.step_up), flickUp, 0..100, 10, onFlickUpChange)
                 }
                 Box(Modifier.weight(1f)) {
-                    ValueDialItemExtended("Step Down", flickDown, 0..100, 10, onFlickDownChange)
+                    ValueDialItemExtended(stringResource(R.string.step_down), flickDown, 0..100, 10, onFlickDownChange)
                 }
             }
 
-            ValueDialItemExtended("Flick Zones", flickZoneNum, 0..64, 16, onFlickZoneNumChange)
+            ValueDialItemExtended(stringResource(R.string.flick_zones), flickZoneNum, 0..64, 16, onFlickZoneNumChange)
 
             if (isPhysicsInvalid) {
                 Text(
-                    text = "Invalid physics parameters detected. Tap tutorial to check formula.",
+                    text = stringResource(R.string.invalid_physics_warning),
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
@@ -240,7 +242,7 @@ fun PhysicsDialDialog(
             }
         )
         Text(
-            text = "Tap center to switch Coarse/Fine",
+            text = stringResource(R.string.dial_coarse_fine_hint),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -251,20 +253,20 @@ fun PhysicsDialDialog(
 @Composable
 fun FormulaDialog(onDismiss: () -> Unit) {
     BonDialogScaffold(
-        title = "Physics Diagnostics",
-        confirmLabel = "Acknowledge",
+        title = stringResource(R.string.physics_diagnostics_title),
+        confirmLabel = stringResource(R.string.acknowledge),
         onDismiss = onDismiss,
         onConfirm = onDismiss
     ) {
-        FormulaItem(" If Z > Z_last:", "H_next = H + U")
-        FormulaItem(" If Z < Z_last:", "H_next = H - D")
-        FormulaItem(" If |Δ| >= T:", "Signal = 1, H = H_default")
-        FormulaItem(" If 0 < Δ < T:", "H_next = H - Eq_minus")
-        FormulaItem(" If -T < Δ < 0:", "H_next = H + Eq_plus")
+        FormulaItem(stringResource(R.string.formula_cond_z_gt), stringResource(R.string.formula_result_h_plus_u))
+        FormulaItem(stringResource(R.string.formula_cond_z_lt), stringResource(R.string.formula_result_h_minus_d))
+        FormulaItem(stringResource(R.string.formula_cond_delta_gte_t), stringResource(R.string.formula_result_signal))
+        FormulaItem(stringResource(R.string.formula_cond_delta_pos), stringResource(R.string.formula_result_h_minus_eq))
+        FormulaItem(stringResource(R.string.formula_cond_delta_neg), stringResource(R.string.formula_result_h_plus_eq))
 
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Note: Δ = H - 1024. \nSystem will block saving if Eq >= T.",
+            text = stringResource(R.string.physics_formula_note),
             style = MaterialTheme.typography.labelSmall,
             lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant

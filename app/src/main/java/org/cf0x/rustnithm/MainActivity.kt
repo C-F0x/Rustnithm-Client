@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -69,10 +70,20 @@ class MainActivity : ComponentActivity() {
             val seedColorLong by dataManager.seedColor.collectAsState()
             val useExpressive by dataManager.useExpressive.collectAsState()
             val language by dataManager.language.collectAsState()
-            androidx.appcompat.app.AppCompatDelegate.setApplicationLocales(
-                if (language == "system") androidx.core.os.LocaleListCompat.getEmptyLocaleList()
-                else androidx.core.os.LocaleListCompat.forLanguageTags(language)
-            )
+
+            LaunchedEffect(language) {
+                val localeManager = getSystemService(android.app.LocaleManager::class.java)
+                val currentLocales = localeManager.applicationLocales
+
+                println("DEBUG: Requesting language: $language")
+                println("DEBUG: Current locales before: ${currentLocales.toLanguageTags()}")
+
+                localeManager.applicationLocales = if (language == "system") {
+                    android.os.LocaleList.getEmptyLocaleList()
+                } else {
+                    android.os.LocaleList.forLanguageTags(language)
+                }
+            }
 
             RustnithmTheme(
                 themeMode = themeMode,

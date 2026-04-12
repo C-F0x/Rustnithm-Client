@@ -31,18 +31,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.cf0x.rustnithm.R
 
 @Composable
 fun BonDialogScaffold(
     title: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    confirmLabel: String = "Confirm",
-    dismissLabel: String = "Cancel",
+    confirmLabel: String? = null,
+    dismissLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val resolvedConfirm = confirmLabel ?: stringResource(R.string.confirm)
+    val resolvedDismiss = dismissLabel ?: stringResource(R.string.cancel)
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -50,12 +55,12 @@ fun BonDialogScaffold(
             TextButton(onClick = {
                 onConfirm()
             }) {
-                Text(confirmLabel, fontWeight = FontWeight.Bold)
+                Text(resolvedConfirm, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(dismissLabel)
+                Text(resolvedDismiss)
             }
         },
         text = {
@@ -188,7 +193,7 @@ fun PhysicsDialDialog(
         )
 
         Text(
-            text = "Drag the wave ring to adjust",
+            text = stringResource(R.string.dial_wave_ring_hint),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -247,8 +252,8 @@ fun ColorPickerDialog(
     }
 
     BonDialogScaffold(
-        title = "Pick Accent Color",
-        confirmLabel = "Apply",
+        title = stringResource(R.string.pick_accent_color_title),
+        confirmLabel = stringResource(R.string.apply),
         onDismiss = onDismiss,
         onConfirm = { onConfirm(currentColor.toArgb().toLong() and 0xFFFFFFFFL) }
     ) {
@@ -260,8 +265,8 @@ fun ColorPickerDialog(
             color = currentColor,
             shadowElevation = 2.dp
         ) {}
-        ExpressiveSlider("Hue", hue, 0f..360f, onValueChange = { hue = it })
-        ExpressiveSlider("Saturation", saturation, 0f..1f, onValueChange = { saturation = it })
-        ExpressiveSlider("Brightness", value, 0f..1f, onValueChange = { value = it })
+        ExpressiveSlider(stringResource(R.string.color_hue), hue, 0f..360f, onValueChange = { hue = it })
+        ExpressiveSlider(stringResource(R.string.color_saturation), saturation, 0f..1f, onValueChange = { saturation = it })
+        ExpressiveSlider(stringResource(R.string.color_brightness), value, 0f..1f, onValueChange = { value = it })
     }
 }

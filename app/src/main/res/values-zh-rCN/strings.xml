@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About -->
+    <string name="about_tagline">基于 Kotlin 和 Rust 构建</string>
+    <string name="about_repo_desc">基于 Kotlin 和 Rust 构建</string>
+    <string name="lang_select">语言</string>
+    <string name="lang_english">English</string>
+    <string name="lang_schinese">简体中文</string>
+    <string name="lang_tchinese">繁體中文</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_french">Français</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">外观</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="dynamic_color">动态取色</string>
+    <string name="expressive">表现力</string>
+    <string name="skin_seed_color">主题种子色</string>
+
+    <!-- Interaction -->
+    <string name="interaction_title">交互</string>
+    <string name="split_ratio">分屏比例</string>
+    <string name="air_sensitivity">空划灵敏度</string>
+    <string name="slide_sensitivity">滑动灵敏度</string>
+    <string name="air_mode_native">原生</string>
+    <string name="air_mode_flick">滑动</string>
+    <string name="air_mode_auto">自动</string>
+    <string name="frequency">频率</string>
+    <string name="haptic_feedback">触觉反馈</string>
+    <string name="haptic_tactile_response">触觉响应</string>
+    <string name="unsupported">不支持</string>
+
+    <!-- Flick -->
+    <string name="flick_physics_title">滑动 物理参数</string>
+    <string name="flick_once">单次 滑动</string>
+    <string name="tutorial">教程</string>
+    <string name="show_formula">显示公式</string>
+    <string name="trigger_threshold">触发阈值</string>
+    <string name="eq_plus">均衡 +</string>
+    <string name="eq_minus">均衡 -</string>
+    <string name="step_up">上步长</string>
+    <string name="step_down">下步长</string>
+    <string name="flick_zones">Flick 区域数</string>
+    <string name="invalid_physics_warning">检测到无效的物理参数，请点击教程查看公式。</string>
+    <string name="dial_coarse_fine_hint">点击中心切换粗调/细调</string>
+    <string name="physics_diagnostics_title">物理参数诊断</string>
+    <string name="acknowledge">知道了</string>
+    <string name="physics_formula_note">注：Δ = H - 1024。\n若 Eq >= T，系统将阻止保存。</string>
+    <string name="formula_cond_z_gt"> 若 Z > Z_last：</string>
+    <string name="formula_result_h_plus_u">H_next = H + U</string>
+    <string name="formula_cond_z_lt"> 若 Z &lt; Z_last：</string>
+    <string name="formula_result_h_minus_d">H_next = H - D</string>
+    <string name="formula_cond_delta_gte_t"> 若 |Δ| >= T：</string>
+    <string name="formula_result_signal">Signal = 1, H = H_default</string>
+    <string name="formula_cond_delta_pos"> 若 0 &lt; Δ &lt; T：</string>
+    <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
+    <string name="formula_cond_delta_neg"> 若 -T &lt; Δ &lt; 0：</string>
+    <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
+
+    <!-- Security -->
+    <string name="security_title">安全</string>
+    <string name="access_codes_label">访问码（20位数字）</string>
+    <string name="save_access_code">保存访问码</string>
+
+    <!-- Common / Scaffold -->
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="apply">应用</string>
+    <string name="dial_wave_ring_hint">拖动波形环以调节</string>
+    <string name="pick_accent_color_title">选择强调色</string>
+    <string name="color_hue">色相</string>
+    <string name="color_saturation">饱和度</string>
+    <string name="color_brightness">亮度</string>
+</resources>

@@ -48,11 +48,13 @@ fun AboutSection(
     var langExpanded by remember { mutableStateOf(false) }
 
     val langOptions = listOf(
-        "system" to stringResource(R.string.lang_english),
+        "en" to stringResource(R.string.lang_english),
         "zh-CN" to stringResource(R.string.lang_schinese),
-        "zh-TW" to stringResource(R.string.lang_tchinese)
+        "zh-TW" to stringResource(R.string.lang_tchinese),
+        "ja" to stringResource(R.string.lang_japanese),
+        "ko" to stringResource(R.string.lang_korean),
+        "fr" to stringResource(R.string.lang_french)
     )
-
     val currentLangLabel = langOptions.firstOrNull { it.first == language }?.second
         ?: stringResource(R.string.lang_english)
 
@@ -68,7 +70,7 @@ fun AboutSection(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.app_name),
+                        text = "Rustnithm",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -94,7 +96,7 @@ fun AboutSection(
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.about_repo),
+                        text = "C-F0x/Rustnithm-Client",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )

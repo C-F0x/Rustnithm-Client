@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About -->
+    <string name="about_tagline">Kotlin과 Rust로 제작</string>
+    <string name="about_repo_desc">Kotlin과 Rust로 제작</string>
+    <string name="lang_select">언어</string>
+    <string name="lang_english">English</string>
+    <string name="lang_schinese">简体中文</string>
+    <string name="lang_tchinese">繁體中文</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_french">Français</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">외관</string>
+    <string name="theme_light">라이트</string>
+    <string name="theme_dark">다크</string>
+    <string name="theme_system">시스템 설정 따르기</string>
+    <string name="dynamic_color">다이나믹 컬러</string>
+    <string name="expressive">익스프레시브</string>
+    <string name="skin_seed_color">테마 시드 색상</string>
+
+    <!-- Interaction -->
+    <string name="interaction_title">인터랙션</string>
+    <string name="split_ratio">분할 비율</string>
+    <string name="air_sensitivity">에어 감도</string>
+    <string name="slide_sensitivity">슬라이드 감도</string>
+    <string name="air_mode_native">네이티브</string>
+    <string name="air_mode_flick">플릭</string>
+    <string name="air_mode_auto">자동</string>
+    <string name="frequency">주파수</string>
+    <string name="haptic_feedback">햅틱 피드백</string>
+    <string name="haptic_tactile_response">촉각 응답</string>
+    <string name="unsupported">미지원</string>
+
+    <!-- Flick -->
+    <string name="flick_physics_title">플릭 물리 파라미터</string>
+    <string name="flick_once">단일 플릭</string>
+    <string name="tutorial">튜토리얼</string>
+    <string name="show_formula">수식 보기</string>
+    <string name="trigger_threshold">트리거 임계값</string>
+    <string name="eq_plus">이퀄라이저 +</string>
+    <string name="eq_minus">이퀄라이저 -</string>
+    <string name="step_up">스텝 업</string>
+    <string name="step_down">스텝 다운</string>
+    <string name="flick_zones">플릭 구역 수</string>
+    <string name="invalid_physics_warning">유효하지 않은 물리 파라미터가 감지되었습니다. 튜토리얼에서 수식을 확인하세요.</string>
+    <string name="dial_coarse_fine_hint">중앙을 탭하여 거친 조정/미세 조정 전환</string>
+    <string name="physics_diagnostics_title">물리 파라미터 진단</string>
+    <string name="acknowledge">확인했습니다</string>
+    <string name="physics_formula_note">참고: Δ = H - 1024.\nEq >= T이면 저장이 차단됩니다.</string>
+    <string name="formula_cond_z_gt"> Z > Z_last 인 경우:</string>
+    <string name="formula_result_h_plus_u">H_next = H + U</string>
+    <string name="formula_cond_z_lt"> Z &lt; Z_last 인 경우:</string>
+    <string name="formula_result_h_minus_d">H_next = H - D</string>
+    <string name="formula_cond_delta_gte_t"> |Δ| >= T 인 경우:</string>
+    <string name="formula_result_signal">Signal = 1, H = H_default</string>
+    <string name="formula_cond_delta_pos"> 0 &lt; Δ &lt; T 인 경우:</string>
+    <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
+    <string name="formula_cond_delta_neg"> -T &lt; Δ &lt; 0 인 경우:</string>
+    <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
+
+    <!-- Security -->
+    <string name="security_title">보안</string>
+    <string name="access_codes_label">액세스 코드 (20자리)</string>
+    <string name="save_access_code">액세스 코드 저장</string>
+
+    <!-- Common / Scaffold -->
+    <string name="confirm">확인</string>
+    <string name="cancel">취소</string>
+    <string name="apply">적용</string>
+    <string name="dial_wave_ring_hint">파형 링을 드래그하여 조정</string>
+    <string name="pick_accent_color_title">강조 색상 선택</string>
+    <string name="color_hue">색조</string>
+    <string name="color_saturation">채도</string>
+    <string name="color_brightness">밝기</string>
+</resources>

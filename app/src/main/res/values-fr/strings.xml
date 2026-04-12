@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- About -->
+    <string name="about_tagline">Construit avec Kotlin et Rust</string>
+    <string name="about_repo_desc">Construit avec Kotlin et Rust</string>
+    <string name="lang_select">Langue</string>
+    <string name="lang_english">English</string>
+    <string name="lang_schinese">简体中文</string>
+    <string name="lang_tchinese">繁體中文</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_french">Français</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">Apparence</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="theme_system">Système</string>
+    <string name="dynamic_color">Couleur dynamique</string>
+    <string name="expressive">Expressif</string>
+    <string name="skin_seed_color">Couleur de thème</string>
+
+    <!-- Interaction -->
+    <string name="interaction_title">Interaction</string>
+    <string name="split_ratio">Ratio de séparation</string>
+    <string name="air_sensitivity">Sensibilité air</string>
+    <string name="slide_sensitivity">Sensibilité glissement</string>
+    <string name="air_mode_native">Natif</string>
+    <string name="air_mode_flick">Flick</string>
+    <string name="air_mode_auto">Auto</string>
+    <string name="frequency">Fréquence</string>
+    <string name="haptic_feedback">Retour haptique</string>
+    <string name="haptic_tactile_response">Réponse tactile</string>
+    <string name="unsupported">Non supporté</string>
+
+    <!-- Flick -->
+    <string name="flick_physics_title">Physique Flick</string>
+    <string name="flick_once">Flick unique</string>
+    <string name="tutorial">Tutoriel</string>
+    <string name="show_formula">Afficher la formule</string>
+    <string name="trigger_threshold">Seuil de déclenchement</string>
+    <string name="eq_plus">Éq. +</string>
+    <string name="eq_minus">Éq. -</string>
+    <string name="step_up">Pas montant</string>
+    <string name="step_down">Pas descendant</string>
+    <string name="flick_zones">Zones de flick</string>
+    <string name="invalid_physics_warning">Paramètres physiques invalides détectés. Consultez le tutoriel pour vérifier la formule.</string>
+    <string name="dial_coarse_fine_hint">Appuyez au centre pour basculer Grossier/Fin</string>
+    <string name="physics_diagnostics_title">Diagnostic physique</string>
+    <string name="acknowledge">Compris</string>
+    <string name="physics_formula_note">Note : Δ = H - 1024.\nLe système bloquera la sauvegarde si Eq >= T.</string>
+    <string name="formula_cond_z_gt"> Si Z > Z_last :</string>
+    <string name="formula_result_h_plus_u">H_next = H + U</string>
+    <string name="formula_cond_z_lt"> Si Z &lt; Z_last :</string>
+    <string name="formula_result_h_minus_d">H_next = H - D</string>
+    <string name="formula_cond_delta_gte_t"> Si |Δ| >= T :</string>
+    <string name="formula_result_signal">Signal = 1, H = H_default</string>
+    <string name="formula_cond_delta_pos"> Si 0 &lt; Δ &lt; T :</string>
+    <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
+    <string name="formula_cond_delta_neg"> Si -T &lt; Δ &lt; 0 :</string>
+    <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
+
+    <!-- Security -->
+    <string name="security_title">Sécurité</string>
+    <string name="access_codes_label">Code d\'accès (20 chiffres)</string>
+    <string name="save_access_code">Enregistrer le code d\'accès</string>
+
+    <!-- Common / Scaffold -->
+    <string name="confirm">Confirmer</string>
+    <string name="cancel">Annuler</string>
+    <string name="apply">Appliquer</string>
+    <string name="dial_wave_ring_hint">Faites glisser l\'anneau pour ajuster</string>
+    <string name="pick_accent_color_title">Choisir la couleur d\'accentuation</string>
+    <string name="color_hue">Teinte</string>
+    <string name="color_saturation">Saturation</string>
+    <string name="color_brightness">Luminosité</string>
+</resources>

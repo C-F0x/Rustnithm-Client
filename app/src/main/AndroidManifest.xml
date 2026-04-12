@@ -6,20 +6,23 @@
     <uses-feature android:name="android.hardware.type.pc" android:required="false" />
 
     <application
+        android:configChanges=""
         android:allowBackup="true"
         android:appCategory="game"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="Rustnithm"
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Rustnithm">
+        android:theme="@style/Theme.Rustnithm"
+        android:localeConfig="@xml/locales_config">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.Rustnithm"
             android:preferMinimalPostProcessing="true"
+            android:configChanges="locale|layoutDirection|screenLayout"
             android:resizeableActivity="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

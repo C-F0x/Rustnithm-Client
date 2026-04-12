@@ -1,11 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Rustnithm</string>
+    <!-- About -->
     <string name="about_tagline">Built with Kotlin &amp; Rust</string>
-    <string name="about_repo">C-F0x/Rustnithm-Client</string>
     <string name="about_repo_desc">Built with Kotlin &amp; Rust</string>
     <string name="lang_select">Language</string>
     <string name="lang_english">English</string>
     <string name="lang_schinese">简体中文</string>
     <string name="lang_tchinese">繁體中文</string>
+    <string name="lang_japanese">日本語</string>
+    <string name="lang_korean">한국어</string>
+    <string name="lang_french">Français</string>
+
+    <!-- Appearance -->
+    <string name="appearance_title">Appearance</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System</string>
+    <string name="dynamic_color">Dynamic Color</string>
+    <string name="expressive">Expressive</string>
+    <string name="skin_seed_color">Skin Seed Color</string>
+
+    <!-- Interaction -->
+    <string name="interaction_title">Interaction</string>
+    <string name="split_ratio">Split Ratio</string>
+    <string name="air_sensitivity">Air Sensitivity</string>
+    <string name="slide_sensitivity">Slide Sensitivity</string>
+    <string name="air_mode_native">Native</string>
+    <string name="air_mode_flick">Flick</string>
+    <string name="air_mode_auto">Auto</string>
+    <string name="frequency">Frequency</string>
+    <string name="haptic_feedback">Haptic Feedback</string>
+    <string name="haptic_tactile_response">Tactile response</string>
+    <string name="unsupported">Unsupported</string>
+
+    <!-- Flick -->
+    <string name="flick_physics_title">Flick Physics</string>
+    <string name="flick_once">Flick Once</string>
+    <string name="tutorial">Tutorial</string>
+    <string name="show_formula">Show Formula</string>
+    <string name="trigger_threshold">Trigger Threshold</string>
+    <string name="eq_plus">Eq +</string>
+    <string name="eq_minus">Eq -</string>
+    <string name="step_up">Step Up</string>
+    <string name="step_down">Step Down</string>
+    <string name="flick_zones">Flick Zones</string>
+    <string name="invalid_physics_warning">Invalid physics parameters detected. Tap tutorial to check formula.</string>
+    <string name="dial_coarse_fine_hint">Tap center to switch Coarse/Fine</string>
+    <string name="physics_diagnostics_title">Physics Diagnostics</string>
+    <string name="acknowledge">Acknowledge</string>
+    <string name="physics_formula_note">Note: Δ = H - 1024. \nSystem will block saving if Eq >= T.</string>
+    <string name="formula_cond_z_gt"> If Z > Z_last:</string>
+    <string name="formula_result_h_plus_u">H_next = H + U</string>
+    <string name="formula_cond_z_lt"> If Z &lt; Z_last:</string>
+    <string name="formula_result_h_minus_d">H_next = H - D</string>
+    <string name="formula_cond_delta_gte_t"> If |Δ| >= T:</string>
+    <string name="formula_result_signal">Signal = 1, H = H_default</string>
+    <string name="formula_cond_delta_pos"> If 0 &lt; Δ &lt; T:</string>
+    <string name="formula_result_h_minus_eq">H_next = H - Eq_minus</string>
+    <string name="formula_cond_delta_neg"> If -T &lt; Δ &lt; 0:</string>
+    <string name="formula_result_h_plus_eq">H_next = H + Eq_plus</string>
+
+    <!-- Security -->
+    <string name="security_title">Security</string>
+    <string name="access_codes_label">Access Codes (20 Digits)</string>
+    <string name="save_access_code">Save Access Code</string>
+
+    <!-- Common / Scaffold -->
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+    <string name="dial_wave_ring_hint">Drag the wave ring to adjust</string>
+    <string name="pick_accent_color_title">Pick Accent Color</string>
+    <string name="color_hue">Hue</string>
+    <string name="color_saturation">Saturation</string>
+    <string name="color_brightness">Brightness</string>
 </resources>

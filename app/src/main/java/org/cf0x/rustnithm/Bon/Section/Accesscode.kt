@@ -16,11 +16,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import org.cf0x.rustnithm.Bon.SettingsGroup
+import org.cf0x.rustnithm.R
 
 @Composable
 fun AccesscodeSection(
@@ -31,13 +33,13 @@ fun AccesscodeSection(
     onAccessCodeToggleVisible: () -> Unit,
     onAccessCodeSave: () -> Unit
 ) {
-    SettingsGroup(title = "Security") {
+    SettingsGroup(title = stringResource(R.string.security_title)) {
         Column(modifier = Modifier.padding(16.dp)) {
             OutlinedTextField(
                 value = accessCodeValue,
                 onValueChange = onAccessCodeValueChange,
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Access Codes (20 Digits)") },
+                label = { Text(stringResource(R.string.access_codes_label)) },
                 isError = isAccessCodeError,
                 shape = MaterialTheme.shapes.large,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -52,7 +54,7 @@ fun AccesscodeSection(
                         IconButton(onClick = onAccessCodeSave) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Save Access Code",
+                                contentDescription = stringResource(R.string.save_access_code),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
