@@ -1,6 +1,7 @@
 package org.cf0x.rustnithm.Data
 
 import android.content.Context
+import android.os.Build
 import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -46,7 +47,15 @@ class Haptic private constructor() {
     private fun execute(effect: VibrationEffect) {
         vibrator?.let { v ->
             if (v.hasVibrator()) {
-                v.vibrate(effect, hapticAttributes)
+                runCatching {
+                    // vibrate(VibrationEffect, VibrationAttributes) overload is
+                    // API 33+; older devices fall back to the plain overload.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        v.vibrate(effect, hapticAttributes)
+                    } else {
+                        v.vibrate(effect)
+                    }
+                }
             }
         }
     }

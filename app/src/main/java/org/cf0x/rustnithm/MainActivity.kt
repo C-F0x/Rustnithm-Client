@@ -1,9 +1,11 @@
 package org.cf0x.rustnithm
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -72,16 +75,31 @@ class MainActivity : ComponentActivity() {
             val language by dataManager.language.collectAsState()
 
             LaunchedEffect(language) {
-                val localeManager = getSystemService(android.app.LocaleManager::class.java)
-                val currentLocales = localeManager.applicationLocales
+                // Same pattern as konamiku's LocaleHelper: API 33+ uses
+                // LocaleManager (no activity recreation); older devices fall
+                // back to AppCompatDelegate (may reconstruct the activity).
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    runCatching {
+                        val localeManager =
+                            getSystemService(android.app.LocaleManager::class.java)
+                                ?: return@runCatching
 
-                println("DEBUG: Requesting language: $language")
-                println("DEBUG: Current locales before: ${currentLocales.toLanguageTags()}")
+                        println("DEBUG: Requesting language: $language")
+                        println(
+                            "DEBUG: Current locales before: " +
+                                localeManager.applicationLocales.toLanguageTags()
+                        )
 
-                localeManager.applicationLocales = if (language == "system") {
-                    android.os.LocaleList.getEmptyLocaleList()
-                } else {
-                    android.os.LocaleList.forLanguageTags(language)
+                        localeManager.applicationLocales = if (language == "system") {
+                            android.os.LocaleList.getEmptyLocaleList()
+                        } else {
+                            android.os.LocaleList.forLanguageTags(language)
+                        }
+                    }
+                } else if (language != "system") {
+                    AppCompatDelegate.setApplicationLocales(
+                        LocaleListCompat.forLanguageTags(language)
+                    )
                 }
             }
 

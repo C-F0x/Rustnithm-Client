@@ -1,7 +1,7 @@
 [versions]
 # SDK & Build Tools
 compileSdk = "37"
-minSdk = "33"
+minSdk = "31"
 targetSdk = "36"
 jvmTarget = "21"
 agp = "9.3.1"
