@@ -1,5 +1,8 @@
 [target.aarch64-linux-android]
-linker = "F:\\KON-WORKSHOP\\AndroidSDK\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android33-clang.cmd"
+# Fallback linker used only when CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER is
+# not set. rust/build.ps1 resolves the real path from ../local.properties (sdk.dir)
+# and exports that env var, which takes precedence over this value.
+linker = "D:\\DevHub\\AndroidSdk\\ndk\\29.0.14206865\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android33-clang.cmd"
 rustflags = [
     "-Clink-arg=-Wl,-z,max-page-size=16384",
     "-Clink-arg=-Wl,-z,common-page-size=16384",
