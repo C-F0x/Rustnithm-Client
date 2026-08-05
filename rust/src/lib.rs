@@ -133,7 +133,11 @@ loop {
 fn connect_tcp(addr: SocketAddr) -> bool {
     match TcpStream::connect_timeout(&addr, Duration::from_secs(3)) {
         Ok(stream) => {
-            let _ = stream.set_read_timeout(Some(Duration::from_millis(100)));
+            // Nagle off: 2-11 byte frames must go out immediately, not wait for ACK.
+            let _ = stream.set_nodelay(true);
+            // Non-blocking reads live in the dedicated RX thread (delivery.rs),
+            // so they can never throttle the send loop.
+            let _ = stream.set_nonblocking(true);
             delivery::set_tcp_stream(Some(stream));
             true
         }
@@ -238,9 +242,8 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateConfig(
                 let _ = dummy.set_nonblocking(true);
                 if let Ok(mut guard) = SOCKET_HOLDER.write() { *guard = Some(dummy); }
             }
-                        thread::spawn(move || {
-                connect_tcp(addr);
-            });
+            // No connect here: the engine loop owns reconnection and will pick
+            // up TARGET_ADDR on its next pass (within ~50 ms).
         }
         _ => {
                         delivery::set_tcp_stream(None);
