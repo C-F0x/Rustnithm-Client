@@ -3,7 +3,7 @@ name = "rustnithm"
 version = "0.1.0"
 edition = "2021"
 authors = ["C-F0x"]
-description = "High-performance 8kHz UDP engine for Android"
+description = "High-performance 1000Hz UDP engine for Android"
 
 [lib]
 crate-type = ["cdylib"]

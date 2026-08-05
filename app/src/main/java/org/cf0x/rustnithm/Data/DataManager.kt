@@ -242,7 +242,7 @@ class DataManager(context: Context) : ViewModel() {
 
     fun updateSendFrequency(frequency: Int) {
         viewModelScope.launch {
-            dataStore.edit { it[PreferenceKeys.SEND_FREQUENCY] = frequency.coerceIn(1, 8000) }
+            dataStore.edit { it[PreferenceKeys.SEND_FREQUENCY] = frequency.coerceIn(1, 1000) }
         }
     }
 
