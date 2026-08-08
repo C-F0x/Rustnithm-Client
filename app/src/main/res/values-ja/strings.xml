@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- About -->
+    <string name="about_rustnithm_title">Rustnithm について</string>
+    <string name="about_rustnithm_desc">カスタマイズ可能なリズムコントローラー。</string>
+    <string name="ok">OK</string>
     <string name="about_tagline">Kotlin と Rust で構築</string>
     <string name="about_repo_desc">Kotlin と Rust で構築</string>
     <string name="lang_select">言語</string>
@@ -12,7 +15,6 @@
     <string name="lang_french">Français</string>
 
     <!-- Appearance -->
-    <string name="appearance_title">外観</string>
     <string name="theme_light">ライト</string>
     <string name="theme_dark">ダーク</string>
     <string name="theme_system">システム設定に従う</string>
@@ -49,6 +51,7 @@
     <string name="physics_diagnostics_title">物理パラメータ診断</string>
     <string name="acknowledge">了解</string>
     <string name="physics_formula_note">注：Δ = H - 1024。別名「累積変化値」\nEq >= T の場合、保存がブロックされます。別名「トリガーしない」</string>
+    <string name="physics_inspiration_note">減衰を伴うハイパスフィルタに着想を得ています</string>
     <string name="formula_cond_z_gt"> Z > Z_last 別名「上スワイプ」の場合：</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
     <string name="formula_cond_z_lt"> Z &lt; Z_last 別名「下スワイプ」の場合：</string>
@@ -64,6 +67,13 @@
     <string name="security_title">セキュリティ</string>
     <string name="access_codes_label">アクセスコード（20桁）</string>
     <string name="save_access_code">アクセスコードを保存</string>
+
+    <!-- Network -->
+    <string name="network_title">ネットワーク</string>
+    <string name="ip_label">IP アドレス</string>
+    <string name="port_label">ポート</string>
+    <string name="protocol_udp">UDP</string>
+    <string name="protocol_tcp">TCP</string>
 
     <!-- Common / Scaffold -->
     <string name="confirm">確認</string>

@@ -57,6 +57,9 @@ fun Bon() {
     val enableVibration by config.enableVibration.collectAsState(initial = false)
     val accessCodes by config.accessCodes.collectAsState(initial = "")
     val sendFrequency by config.sendFrequency.collectAsState(initial = 500)
+    val targetIp by dataManager.targetIp.collectAsState()
+    val targetPort by dataManager.targetPort.collectAsState()
+    val protocolType by dataManager.protocolType.collectAsState()
 
     val flickThreshold by config.flickThreshold.collectAsState(initial = 40)
     val flickEqualizerPlus by config.flickEqualizerPlus.collectAsState(initial = 1)
@@ -118,9 +121,8 @@ fun Bon() {
         showFormulaDialog = config.showFormulaDialog,
         onFormulaDialogToggle = { config.showFormulaDialog = it },
 
-        onInfoClick = { config.showInfoDialog = true },
-        onThemeChange = { config.updateTheme(it) },
         onColorPickerOpen = { config.showColorPickerDialog = true },
+        onThemeChange = { config.updateTheme(it) },
         onPercentChange = { config.updatePercent(it) },
         onSensitivityAChange = { config.updateSensitivityA(it) },
         onSensitivitySChange = { config.updateSensitivityS(it) },
@@ -141,6 +143,13 @@ fun Bon() {
 
         onVibrationChange = { if (isHardwareSupportVibration) config.toggleVibration(it) },
 
+        ipValue = targetIp,
+        portValue = targetPort,
+        protocolType = protocolType,
+        onIpSaved = { dataManager.updateTargetIp(it) },
+        onPortSaved = { dataManager.updateTargetPort(it) },
+        onProtocolSelect = { dataManager.updateProtocolType(it) },
+
         onImportClick = { filePickerLauncher.launch(arrayOf("application/json", "image/*")) },
         onDeleteClick = { config.resetBackground() },
         onResetAllClick = { config.showResetDialog = true },
@@ -154,17 +163,6 @@ fun Bon() {
             onConfirm = {
                 config.updateSeedColor(it)
                 config.showColorPickerDialog = false
-            }
-        )
-    }
-
-    if (config.showInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { config.showInfoDialog = false },
-            title = { Text("About Rustnithm") },
-            text = { Text("Customizable rhythm controller.") },
-            confirmButton = {
-                TextButton(onClick = { config.showInfoDialog = false }) { Text("OK") }
             }
         )
     }

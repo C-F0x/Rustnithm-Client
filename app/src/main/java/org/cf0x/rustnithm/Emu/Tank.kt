@@ -105,7 +105,7 @@ object TankManager {
 
             if (tank.bind == 1) {
                 if (tank.tickAnalysis(threshold, plus, minus)) {
-                    Net.nativeTriggerFlick()
+                    Net.triggerFlick()
 
                     if (flickOnce) {
                         flickedPointers.add(pointerIndex)

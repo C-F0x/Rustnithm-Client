@@ -36,14 +36,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.cf0x.rustnithm.Bon.BonDialogScaffold
 import org.cf0x.rustnithm.Bon.PointPos
-import org.cf0x.rustnithm.Bon.SettingsGroup
 import org.cf0x.rustnithm.Bon.ToggleSettingItem
 import org.cf0x.rustnithm.Bon.WavyoidConfig
 import org.cf0x.rustnithm.Bon.WavyoidDial
 import org.cf0x.rustnithm.R
 
+/** Flick (轻扫) physics tuning, embedded inside the IR Sensor section. */
 @Composable
-fun FlickSection(
+fun FlickContent(
     flickThreshold: Int,
     flickEqualizerPlus: Int,
     flickEqualizerMinus: Int,
@@ -69,11 +69,7 @@ fun FlickSection(
         )
     } else Modifier
 
-    SettingsGroup(
-        title = stringResource(R.string.flick_physics_title),
-        modifier = errorModifier
-    ) {
-        Column {
+    Column(modifier = errorModifier) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -146,7 +142,6 @@ fun FlickSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-        }
     }
 
     if (showFormulaDialog) {
@@ -270,6 +265,12 @@ fun FormulaDialog(onDismiss: () -> Unit) {
             style = MaterialTheme.typography.labelSmall,
             lineHeight = 16.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.physics_inspiration_note),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.tertiary
         )
     }
 }

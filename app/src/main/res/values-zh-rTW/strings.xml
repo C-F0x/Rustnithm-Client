@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- About -->
+    <string name="about_rustnithm_title">關於 Rustnithm</string>
+    <string name="about_rustnithm_desc">可自訂的節奏控制器。</string>
+    <string name="ok">確定</string>
     <string name="about_tagline">基於 Kotlin 與 Rust 構建</string>
     <string name="about_repo_desc">基於 Kotlin 與 Rust 構建</string>
     <string name="lang_select">語言</string>
@@ -12,7 +15,6 @@
     <string name="lang_french">Français</string>
 
     <!-- Appearance -->
-    <string name="appearance_title">外觀</string>
     <string name="theme_light">淺色</string>
     <string name="theme_dark">深色</string>
     <string name="theme_system">跟隨系統</string>
@@ -23,10 +25,10 @@
     <!-- Interaction -->
     <string name="interaction_title">互動</string>
     <string name="split_ratio">分屏比例</string>
-    <string name="air_sensitivity">空劃靈敏度</string>
+    <string name="air_sensitivity">感應靈敏度</string>
     <string name="slide_sensitivity">滑動靈敏度</string>
     <string name="air_mode_native">原生</string>
-    <string name="air_mode_flick">滑動</string>
+    <string name="air_mode_flick">輕掃</string>
     <string name="air_mode_auto">自動</string>
     <string name="frequency">頻率</string>
     <string name="haptic_feedback">觸覺回饋</string>
@@ -34,8 +36,8 @@
     <string name="unsupported">不支援</string>
 
     <!-- Flick -->
-    <string name="flick_physics_title">滑動 物理參數</string>
-    <string name="flick_once">單次 滑動</string>
+    <string name="flick_physics_title">輕掃 物理參數</string>
+    <string name="flick_once">單次 輕掃</string>
     <string name="tutorial">教學</string>
     <string name="show_formula">顯示公式</string>
     <string name="trigger_threshold">觸發閾值</string>
@@ -49,6 +51,7 @@
     <string name="physics_diagnostics_title">物理參數診斷</string>
     <string name="acknowledge">知道了</string>
     <string name="physics_formula_note">注：Δ = H - 1024。即「累計變化值」\n若 Eq >= T，系統將阻止儲存。即「永不觸發」</string>
+    <string name="physics_inspiration_note">靈感來源於帶衰減的高通濾波器</string>
     <string name="formula_cond_z_gt"> 若 Z > Z_last 即「上滑」：</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
     <string name="formula_cond_z_lt"> 若 Z &lt; Z_last 即「下滑」：</string>
@@ -64,6 +67,13 @@
     <string name="security_title">安全性</string>
     <string name="access_codes_label">存取碼（20位數字）</string>
     <string name="save_access_code">儲存存取碼</string>
+
+    <!-- Network -->
+    <string name="network_title">網路</string>
+    <string name="ip_label">IP 位址</string>
+    <string name="port_label">連接埠</string>
+    <string name="protocol_udp">UDP</string>
+    <string name="protocol_tcp">TCP</string>
 
     <!-- Common / Scaffold -->
     <string name="confirm">確認</string>

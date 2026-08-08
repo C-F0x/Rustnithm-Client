@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- About -->
+    <string name="about_title" translatable="false">Info</string>
+    <string name="about_rustnithm_title">About Rustnithm</string>
+    <string name="about_rustnithm_desc">Customizable rhythm controller.</string>
+    <string name="ok">OK</string>
     <string name="about_tagline">Built with Kotlin &amp; Rust</string>
     <string name="about_repo_desc">Built with Kotlin &amp; Rust</string>
     <string name="lang_select">Language</string>
@@ -12,7 +16,7 @@
     <string name="lang_french">Français</string>
 
     <!-- Appearance -->
-    <string name="appearance_title">Appearance</string>
+    <string name="appearance_title" translatable="false">Interface</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>
@@ -49,6 +53,7 @@
     <string name="physics_diagnostics_title">Physics Diagnostics</string>
     <string name="acknowledge">Acknowledge</string>
     <string name="physics_formula_note">Note: Δ = H - 1024. aka.Cumulative change value \nSystem will block saving if Eq >= T. aka.Never trigger </string>
+    <string name="physics_inspiration_note">Inspired by a high-pass filter with decay</string>
     <string name="formula_cond_z_gt"> If Z > Z_last aka.Swipe up:</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
     <string name="formula_cond_z_lt"> If Z &lt; Z_last aka.Swipe down :</string>
@@ -64,6 +69,16 @@
     <string name="security_title">Security</string>
     <string name="access_codes_label">Access Codes (20 Digits)</string>
     <string name="save_access_code">Save Access Code</string>
+
+    <!-- Network -->
+    <string name="network_title">Network</string>
+    <string name="slide_section_title" translatable="false">Slider</string>
+    <string name="ir_sensor_title" translatable="false">IR Sensor</string>
+    <string name="connection_section_title" translatable="false">Connection</string>
+    <string name="ip_label">IP Address</string>
+    <string name="port_label">Port</string>
+    <string name="protocol_udp">UDP</string>
+    <string name="protocol_tcp">TCP</string>
 
     <!-- Common / Scaffold -->
     <string name="confirm">Confirm</string>

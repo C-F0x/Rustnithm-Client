@@ -14,25 +14,31 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
+import org.cf0x.rustnithm.Data.Net
 import org.cf0x.rustnithm.Emu.TankRush
 
 enum class ConnState { SUSPEND, WAITING, ACTIVE }
 
 @Composable
-fun Jour() {
+fun Jour(
+    connState: ConnState,
+    coinPressed: Boolean,
+    servicePressed: Boolean,
+    testPressed: Boolean,
+    cardPressed: Boolean,
+    onCoinChanged: (Boolean) -> Unit,
+    onServiceChanged: (Boolean) -> Unit,
+    onTestChanged: (Boolean) -> Unit,
+    onCardChanged: (Boolean) -> Unit
+) {
     val context = LocalContext.current
     val view = LocalView.current
     val haptic = remember { Haptic.getInstance() }
     val dataManager: DataManager = viewModel(factory = DataManager.Factory(context))
     val focusManager = LocalFocusManager.current
 
-    var connState by remember { mutableStateOf(ConnState.SUSPEND) }
     var activatedAir by remember { mutableStateOf<Set<Int>>(setOf()) }
     var activatedSlide by remember { mutableStateOf<Set<Int>>(setOf()) }
-    var coinPressed by remember { mutableStateOf(false) }
-    var servicePressed by remember { mutableStateOf(false) }
-    var testPressed by remember { mutableStateOf(false) }
-    var cardPressed by remember { mutableStateOf(false) }
     var lastAir by remember { mutableStateOf<Set<Int>>(setOf()) }
     var lastSlide by remember { mutableStateOf<Set<Int>>(setOf()) }
 
@@ -56,15 +62,14 @@ fun Jour() {
         haptic.attachView(view)
         onDispose {
             TankRush.stop()
-            if (connState != ConnState.SUSPEND) {
+            // Read the real native state instead of the connState parameter:
+            // that parameter is a 100 ms polling snapshot, so leaving the page
+            // right after connecting would see the stale SUSPEND and skip the
+            // disconnect, leaving the engine ACTIVE in the background.
+            val raw = Net.getState()
+            if (raw == 1 || raw == 2) {
                 JourBackend.toggleConnection()
             }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        JourBackend.pollConnectionState().collect { newState ->
-            connState = newState
         }
     }
 
@@ -120,9 +125,6 @@ fun Jour() {
         percentPage = percentPage,
         multiA = multiA,
         multiS = multiS,
-        savedIp = savedIp,
-        savedPort = savedPort,
-        protocolType = protocolType,
         isVibrationEnabled = isVibrationEnabled,
         haptic = haptic,
         focusManager = focusManager,
@@ -135,18 +137,6 @@ fun Jour() {
         onActivatedChanged = { air, slide ->
             activatedAir = air
             activatedSlide = slide
-        },
-        onIpSaved = { ip -> dataManager.updateTargetIp(ip) },
-        onPortSaved = { port -> dataManager.updateTargetPort(port) },
-        onProtocolToggle = {
-            dataManager.updateProtocolType(if (protocolType == 0) 1 else 0)
-        },
-        onConnectionToggle = { JourBackend.toggleConnection() },
-        onConnectionSync = { JourBackend.toggleSync() },
-        onCoinChanged = { coinPressed = it },
-        onServiceChanged = { servicePressed = it },
-        onTestChanged = { testPressed = it },
-        onCardChanged = { cardPressed = it },
-        onMickeyToggle = { enabled -> JourBackend.updateMickeyButton(enabled) }
+        }
     )
 }

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- About -->
+    <string name="about_rustnithm_title">Rustnithm 정보</string>
+    <string name="about_rustnithm_desc">사용자 정의 가능한 리듬 컨트롤러입니다.</string>
+    <string name="ok">확인</string>
     <string name="about_tagline">Kotlin과 Rust로 제작</string>
     <string name="about_repo_desc">Kotlin과 Rust로 제작</string>
     <string name="lang_select">언어</string>
@@ -12,7 +15,6 @@
     <string name="lang_french">Français</string>
 
     <!-- Appearance -->
-    <string name="appearance_title">외관</string>
     <string name="theme_light">라이트</string>
     <string name="theme_dark">다크</string>
     <string name="theme_system">시스템 설정 따르기</string>
@@ -49,6 +51,7 @@
     <string name="physics_diagnostics_title">물리 파라미터 진단</string>
     <string name="acknowledge">확인했습니다</string>
     <string name="physics_formula_note">참고: Δ = H - 1024. 일명 "누적 변화값"\nEq >= T이면 저장이 차단됩니다. 일명 "절대 트리거 안 됨"</string>
+    <string name="physics_inspiration_note">감쇠가 있는 하이패스 필터에서 영감을 받았습니다</string>
     <string name="formula_cond_z_gt"> Z > Z_last 일명 "위로 스와이프"인 경우:</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
     <string name="formula_cond_z_lt"> Z &lt; Z_last 일명 "아래로 스와이프"인 경우:</string>
@@ -63,6 +66,13 @@
     <string name="security_title">보안</string>
     <string name="access_codes_label">액세스 코드 (20자리)</string>
     <string name="save_access_code">액세스 코드 저장</string>
+
+    <!-- Network -->
+    <string name="network_title">네트워크</string>
+    <string name="ip_label">IP 주소</string>
+    <string name="port_label">포트</string>
+    <string name="protocol_udp">UDP</string>
+    <string name="protocol_tcp">TCP</string>
 
     <!-- Common / Scaffold -->
     <string name="confirm">확인</string>

@@ -188,9 +188,18 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
     _env: JNIEnv, _class: JClass,
 ) {
     let current = STATE_VALUE.load(Ordering::Acquire);
-    if current != 2 {
-        STATE_VALUE.store(if current == 1 { 0 } else { 1 }, Ordering::SeqCst);
+    let next = if current == 1 { 0 } else { 1 };
+    if current == 2 {
+        // WAITING (sync in progress): the connect button means "disconnect".
+        // Cancel the sync instead of ignoring the tap, otherwise leaving the
+        // page mid-sync would never stop the engine.
+        if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
+            *guard = None;
+        }
+        STATE_VALUE.store(0, Ordering::SeqCst);
+        return;
     }
+    STATE_VALUE.store(next, Ordering::SeqCst);
 }
 
 #[no_mangle]

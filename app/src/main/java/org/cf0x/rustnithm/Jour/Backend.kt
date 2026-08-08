@@ -48,7 +48,7 @@ object JourBackend {
 
     fun pollConnectionState(): Flow<ConnState> = flow {
         while (true) {
-            val rawState = Net.nativeGetState()
+            val rawState = Net.getState()
             val connState = when (rawState) {
                 1 -> ConnState.ACTIVE
                 2 -> ConnState.WAITING
@@ -60,11 +60,11 @@ object JourBackend {
     }.distinctUntilChanged()
 
     fun toggleConnection() {
-        Net.nativeToggleClient()
+        Net.toggleClient()
     }
 
     fun toggleSync() {
-        Net.nativeToggleSync()
+        Net.toggleSync()
     }
 
     fun updateMickeyButton(enabled: Boolean) {

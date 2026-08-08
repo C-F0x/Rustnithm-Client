@@ -6,6 +6,13 @@ object Net {
 
     private var isLibraryLoaded = false
 
+    // Load the native library on first access to this object, so any native
+    // call (including the public wrappers below) is safe even before
+    // DataManager's async initEngine runs.
+    init {
+        loadLibrary()
+    }
+
     private fun loadLibrary() {
         if (!isLibraryLoaded) {
             try {
@@ -19,14 +26,14 @@ object Net {
 
     private external fun nativeInit(frequency: Int)
     private external fun nativeUpdateConfig(ip: String, port: Int, protocolType: Int)
-    external fun nativeGetState(): Int
-    external fun nativeToggleClient()
-    external fun nativeToggleSync()
-    external fun nativeUpdateFlickCoords(index: Int, y: Int)
-    external fun nativeTouchDown(pid: Int, y: Int)
-    external fun nativeTouchUp(pid: Int)
+    private external fun nativeGetState(): Int
+    private external fun nativeToggleClient()
+    private external fun nativeToggleSync()
+    private external fun nativeUpdateFlickCoords(index: Int, y: Int)
+    private external fun nativeTouchDown(pid: Int, y: Int)
+    private external fun nativeTouchUp(pid: Int)
 
-    external fun nativeTriggerFlick()
+    private external fun nativeTriggerFlick()
 
     private external fun nativeUpdateState(
         packetType: Int,
@@ -47,6 +54,33 @@ object Net {
         } catch (e: Exception) {
             Log.e("Net", "Init failed", e)
         }
+    }
+
+    /** @return raw engine state: 0 = suspended, 1 = active, 2 = waiting */
+    fun getState(): Int {
+        loadLibrary()
+        return nativeGetState()
+    }
+
+    fun toggleClient() {
+        loadLibrary()
+        nativeToggleClient()
+    }
+
+    fun toggleSync() {
+        loadLibrary()
+        nativeToggleSync()
+    }
+
+    /** Updates the flick-sampling coordinate for a pointer slot. */
+    fun updateFlickCoords(index: Int, y: Int) {
+        loadLibrary()
+        nativeUpdateFlickCoords(index, y)
+    }
+
+    fun triggerFlick() {
+        loadLibrary()
+        nativeTriggerFlick()
     }
 
     fun updateConfig(ip: String, port: Int, protocolType: Int) {

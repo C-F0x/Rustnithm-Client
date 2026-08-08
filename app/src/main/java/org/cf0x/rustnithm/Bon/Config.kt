@@ -47,7 +47,6 @@ class Config(
     var isError by mutableStateOf(false)
     var passwordVisible by mutableStateOf(false)
     var showColorPickerDialog by mutableStateOf(false)
-    var showInfoDialog by mutableStateOf(false)
     var showResetDialog by mutableStateOf(false)
     var showFormulaDialog by mutableStateOf(false)
     var frequencyInput by mutableFloatStateOf(500f)

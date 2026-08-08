@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- About -->
+    <string name="about_rustnithm_title">À propos de Rustnithm</string>
+    <string name="about_rustnithm_desc">Contrôleur de rythme personnalisable.</string>
+    <string name="ok">OK</string>
     <string name="about_tagline">Construit avec Kotlin et Rust</string>
     <string name="about_repo_desc">Construit avec Kotlin et Rust</string>
     <string name="lang_select">Langue</string>
@@ -12,7 +15,6 @@
     <string name="lang_french">Français</string>
 
     <!-- Appearance -->
-    <string name="appearance_title">Apparence</string>
     <string name="theme_light">Clair</string>
     <string name="theme_dark">Sombre</string>
     <string name="theme_system">Système</string>
@@ -49,6 +51,7 @@
     <string name="physics_diagnostics_title">Diagnostic physique</string>
     <string name="acknowledge">Compris</string>
     <string name="physics_formula_note">Note : Δ = H - 1024. alias « Valeur de changement cumulée »\nLe système bloquera la sauvegarde si Eq >= T. alias « Ne jamais déclencher »</string>
+    <string name="physics_inspiration_note">Inspiré d\'un filtre passe-haut avec atténuation</string>
     <string name="formula_cond_z_gt"> Si Z > Z_last alias « Glissement vers le haut » :</string>
     <string name="formula_result_h_plus_u">H_next = H + U</string>
     <string name="formula_cond_z_lt"> Si Z &lt; Z_last alias « Glissement vers le bas » :</string>
@@ -64,6 +67,13 @@
     <string name="security_title">Sécurité</string>
     <string name="access_codes_label">Code d\'accès (20 chiffres)</string>
     <string name="save_access_code">Enregistrer le code d\'accès</string>
+
+    <!-- Network -->
+    <string name="network_title">Réseau</string>
+    <string name="ip_label">Adresse IP</string>
+    <string name="port_label">Port</string>
+    <string name="protocol_udp">UDP</string>
+    <string name="protocol_tcp">TCP</string>
 
     <!-- Common / Scaffold -->
     <string name="confirm">Confirmer</string>
