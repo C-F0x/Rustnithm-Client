@@ -2,7 +2,7 @@
 # SDK & Build Tools
 compileSdk = "37"
 minSdk = "31"
-targetSdk = "36"
+targetSdk = "37"
 jvmTarget = "21"
 agp = "9.3.1"
 
@@ -12,7 +12,7 @@ composeBom = "2026.06.01"
 foundation = "1.11.4"
 
 # AndroidX Libraries
-activityCompose = "1.12.4"
+activityCompose = "1.13.0"
 coreKtx = "1.19.0"
 datastorePreferences = "1.2.1"
 lifecycle = "2.11.0"
@@ -33,7 +33,7 @@ ui = "1.11.4"
 
 [libraries]
 # AndroidX & Compose
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version = "1.13.0" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
 androidx-compose-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
