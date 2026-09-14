@@ -5,11 +5,11 @@ mod delivery;
 use jni::JNIEnv;
 use jni::objects::{JClass, JString};
 use jni::sys::{jint, jbyteArray};
-use std::net::{UdpSocket, SocketAddr, TcpStream};
+use std::net::{UdpSocket, SocketAddr, TcpStream, TcpListener};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use once_cell::sync::Lazy;
 
 pub(crate) static STATE_VALUE: AtomicU32 = AtomicU32::new(0);
@@ -18,6 +18,8 @@ pub(crate) static INTERVAL_NS: AtomicU64 = AtomicU64::new(1_000_000);
 
 pub(crate) static TARGET_ADDR: RwLock<Option<SocketAddr>> = RwLock::new(None);
 pub(crate) static SOCKET_HOLDER: RwLock<Option<UdpSocket>> = RwLock::new(None);
+pub(crate) static TCP_LISTENER: RwLock<Option<TcpListener>> = RwLock::new(None);
+pub(crate) static PENDING_TOGGLE: Mutex<Option<(u32, bool, Instant)>> = Mutex::new(None);
 
 pub(crate) struct NetData {
     pub packet_type: AtomicU32,
@@ -31,6 +33,7 @@ pub(crate) struct NetData {
     pub air_mode: AtomicU32,
     pub mickey: AtomicU32,
     pub flick_signal: AtomicU32,
+    pub server_slider_led: Mutex<Vec<u8>>,
 }
 
 pub(crate) static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData {
@@ -45,7 +48,21 @@ pub(crate) static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData 
     air_mode: AtomicU32::new(1),
     mickey: AtomicU32::new(0),
     flick_signal: AtomicU32::new(0),
+    server_slider_led: Mutex::new(Vec::new()),
 }));
+
+pub(crate) fn clear_server_led() {
+    if let Ok(mut guard) = DATA_POOL.server_slider_led.lock() {
+        guard.clear();
+    }
+}
+
+pub(crate) fn set_server_slider_led(bytes: &[u8]) {
+    if let Ok(mut guard) = DATA_POOL.server_slider_led.lock() {
+        guard.clear();
+        guard.extend_from_slice(bytes);
+    }
+}
 
 fn start_permanent_loop() {
     thread::Builder::new().name("RustNetEngine".into()).spawn(move || {
@@ -184,6 +201,21 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeGetState(
 }
 
 #[no_mangle]
+pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeGetServerSliderLed(
+    mut env: JNIEnv, _class: JClass,
+) -> jbyteArray {
+    let bytes = DATA_POOL
+        .server_slider_led
+        .lock()
+        .map(|guard| guard.clone())
+        .unwrap_or_default();
+    match env.byte_array_from_slice(&bytes) {
+        Ok(array) => array.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+#[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
     _env: JNIEnv, _class: JClass,
 ) {
@@ -196,10 +228,15 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
         if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
             *guard = None;
         }
+        if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
         STATE_VALUE.store(0, Ordering::SeqCst);
+        clear_server_led();
         return;
     }
     STATE_VALUE.store(next, Ordering::SeqCst);
+    if next == 0 {
+        clear_server_led();
+    }
 }
 
 #[no_mangle]
@@ -208,8 +245,13 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleSync(
 ) {
     let current = STATE_VALUE.load(Ordering::Acquire);
     if current == 2 { return; }
+    if PENDING_TOGGLE.lock().ok().map(|g| g.is_some()).unwrap_or(true) { return; }
     let target = if current == 1 { 0 } else { 1 };
     DATA_POOL.sync_target_state.store(target, Ordering::Relaxed);
+    let request_id = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u32;
+    if let Ok(mut pending) = PENDING_TOGGLE.lock() {
+        *pending = Some((request_id, target != 0, Instant::now() + Duration::from_millis(500)));
+    }
     if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
         *guard = Some(Instant::now() + Duration::from_millis(500));
     }
@@ -230,7 +272,7 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeInit(
 #[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateConfig(
     mut env: JNIEnv, _class: JClass,
-    ip: JString, port: jint, protocol_type: jint,
+    ip: JString, port: jint, local_port: jint, protocol_type: jint,
 ) {
     let ip_str: String = match env.get_string(&ip) {
         Ok(s) => s.into(),
@@ -240,23 +282,26 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateConfig(
         Ok(a) => a,
         Err(_) => return,
     };
+    if !(1..=65535).contains(&local_port) { return; }
 
-        if let Ok(mut guard) = TARGET_ADDR.write() { *guard = Some(addr); }
+    // Drop every resource owned by the previous protocol before rebinding.
+    if let Ok(mut guard) = SOCKET_HOLDER.write() { *guard = None; }
+    if let Ok(mut guard) = TCP_LISTENER.write() { *guard = None; }
+    delivery::set_tcp_stream(None);
+    clear_server_led();
+
+    if let Ok(mut guard) = TARGET_ADDR.write() { *guard = Some(addr); }
     PROTOCOL_TYPE.store(protocol_type as u32, Ordering::SeqCst);
 
     match protocol_type {
         1 => {
-                                                delivery::set_tcp_stream(None);
-            if let Ok(dummy) = UdpSocket::bind("0.0.0.0:0") {
-                let _ = dummy.set_nonblocking(true);
-                if let Ok(mut guard) = SOCKET_HOLDER.write() { *guard = Some(dummy); }
+            if let Ok(listener) = TcpListener::bind(format!("0.0.0.0:{}", local_port)) {
+                let _ = listener.set_nonblocking(true);
+                if let Ok(mut guard) = TCP_LISTENER.write() { *guard = Some(listener); }
             }
-            // No connect here: the engine loop owns reconnection and will pick
-            // up TARGET_ADDR on its next pass (within ~50 ms).
         }
         _ => {
-                        delivery::set_tcp_stream(None);
-            if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
+            if let Ok(socket) = UdpSocket::bind(format!("0.0.0.0:{}", local_port)) {
                 let _ = socket.set_nonblocking(true);
                 if let Ok(mut guard) = SOCKET_HOLDER.write() { *guard = Some(socket); }
             }

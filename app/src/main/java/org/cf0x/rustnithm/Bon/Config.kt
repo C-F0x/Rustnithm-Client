@@ -34,6 +34,7 @@ class Config(
     val enableVibration: StateFlow<Boolean> = dataManager.enableVibration
     val accessCodes: StateFlow<String> = dataManager.accessCodes
     val sendFrequency: StateFlow<Int> = dataManager.sendFrequency
+    val ledSourceGame: StateFlow<Boolean> = dataManager.ledSourceGame
 
     val flickThreshold: StateFlow<Int> = dataManager.flickThreshold
     val flickEqualizerPlus: StateFlow<Int> = dataManager.flickEqualizerPlus
@@ -123,6 +124,8 @@ class Config(
     fun saveFrequency() {
         dataManager.updateSendFrequency(frequencyInput.toInt())
     }
+
+    fun updateLedSourceGame(enabled: Boolean) = dataManager.updateLedSourceGame(enabled)
 
     fun handleImport(uri: Uri) {
         val mimeType = context.contentResolver.getType(uri)

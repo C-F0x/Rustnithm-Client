@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 import org.cf0x.rustnithm.Data.DataManager
 import org.cf0x.rustnithm.Data.Haptic
 import org.cf0x.rustnithm.Data.Net
@@ -41,15 +42,29 @@ fun Jour(
     var activatedSlide by remember { mutableStateOf<Set<Int>>(setOf()) }
     var lastAir by remember { mutableStateOf<Set<Int>>(setOf()) }
     var lastSlide by remember { mutableStateOf<Set<Int>>(setOf()) }
+    var serverSliderLed by remember { mutableStateOf(ByteArray(0)) }
+
+    LaunchedEffect(connState) {
+        while (connState != ConnState.SUSPEND) {
+            val nextLed = Net.getServerSliderLed()
+            if (!serverSliderLed.contentEquals(nextLed)) {
+                serverSliderLed = nextLed
+            }
+            delay(50)
+        }
+        serverSliderLed = ByteArray(0)
+    }
 
     val savedIp by dataManager.targetIp.collectAsState()
     val savedPort by dataManager.targetPort.collectAsState()
+    val savedLocalPort by dataManager.localPort.collectAsState()
     val bgUri by dataManager.backgroundImage.collectAsState()
     val percentPage by dataManager.percentPage.collectAsState()
     val multiA by dataManager.multiA.collectAsState()
     val multiS by dataManager.multiS.collectAsState()
     val isVibrationEnabled by dataManager.enableVibration.collectAsState()
     val protocolType by dataManager.protocolType.collectAsState()
+    val ledSourceGame by dataManager.ledSourceGame.collectAsState()
     val airMode by dataManager.airMode.collectAsState()
     val accessCodes by dataManager.accessCodes.collectAsState()
     val flickEqualizerPlus by dataManager.flickEqualizerPlus.collectAsState()
@@ -81,11 +96,12 @@ fun Jour(
         }
     }
 
-    LaunchedEffect(savedIp, savedPort, protocolType) {
-        if (savedIp.isNotEmpty() && savedPort.isNotEmpty()) {
+    LaunchedEffect(savedIp, savedPort, savedLocalPort, protocolType) {
+        if (savedIp.isNotEmpty() && savedPort.isNotEmpty() && savedLocalPort.isNotEmpty()) {
             val port = savedPort.toIntOrNull() ?: 0
-            if (JourBackend.validateIp(savedIp) && JourBackend.validatePort(savedPort)) {
-                JourBackend.updateNetworkConfig(savedIp, port, protocolType)
+            val localPort = savedLocalPort.toIntOrNull() ?: 0
+            if (JourBackend.validateIp(savedIp) && JourBackend.validatePort(savedPort) && JourBackend.validatePort(savedLocalPort)) {
+                JourBackend.updateNetworkConfig(savedIp, port, localPort, protocolType)
             }
         }
     }
@@ -121,6 +137,8 @@ fun Jour(
         connState = connState,
         activatedAir = activatedAir,
         activatedSlide = activatedSlide,
+        serverSliderLed = serverSliderLed,
+        useServerLed = ledSourceGame,
         backgroundUri = bgUri,
         percentPage = percentPage,
         multiA = multiA,

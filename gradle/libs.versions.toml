@@ -4,7 +4,7 @@ compileSdk = "37"
 minSdk = "31"
 targetSdk = "37"
 jvmTarget = "21"
-agp = "9.3.1"
+agp = "9.5.0-alpha05"
 
 # Kotlin & Compose
 kotlin = "2.4.10"

@@ -25,8 +25,9 @@ object Net {
     }
 
     private external fun nativeInit(frequency: Int)
-    private external fun nativeUpdateConfig(ip: String, port: Int, protocolType: Int)
+    private external fun nativeUpdateConfig(ip: String, port: Int, localPort: Int, protocolType: Int)
     private external fun nativeGetState(): Int
+    private external fun nativeGetServerSliderLed(): ByteArray
     private external fun nativeToggleClient()
     private external fun nativeToggleSync()
     private external fun nativeUpdateFlickCoords(index: Int, y: Int)
@@ -62,6 +63,11 @@ object Net {
         return nativeGetState()
     }
 
+    fun getServerSliderLed(): ByteArray {
+        loadLibrary()
+        return if (isLibraryLoaded) nativeGetServerSliderLed() else ByteArray(0)
+    }
+
     fun toggleClient() {
         loadLibrary()
         nativeToggleClient()
@@ -83,9 +89,9 @@ object Net {
         nativeTriggerFlick()
     }
 
-    fun updateConfig(ip: String, port: Int, protocolType: Int) {
+    fun updateConfig(ip: String, port: Int, localPort: Int, protocolType: Int) {
         loadLibrary()
-        if (isLibraryLoaded) nativeUpdateConfig(ip, port, protocolType)
+        if (isLibraryLoaded) nativeUpdateConfig(ip, port, localPort, protocolType)
     }
 
     fun setMickeyState(enabled: Boolean) {

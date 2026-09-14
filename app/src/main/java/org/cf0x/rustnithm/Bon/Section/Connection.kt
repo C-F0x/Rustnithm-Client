@@ -34,6 +34,7 @@ import org.cf0x.rustnithm.Bon.BonMath
 import org.cf0x.rustnithm.Bon.SegmentSwitch
 import org.cf0x.rustnithm.Bon.SettingsGroup
 import org.cf0x.rustnithm.Bon.SettingSliderItem
+import org.cf0x.rustnithm.Bon.SettingToggleItem
 import org.cf0x.rustnithm.Jour.JourBackend
 import org.cf0x.rustnithm.R
 
@@ -41,14 +42,18 @@ import org.cf0x.rustnithm.R
 fun ConnectionSection(
     initialIp: String,
     initialPort: String,
+    initialLocalPort: String,
     protocolType: Int,
+    ledSourceGame: Boolean,
     accessCodeValue: String,
     isAccessCodeError: Boolean,
     passwordVisible: Boolean,
     frequencyValue: Float,
     onIpSaved: (String) -> Unit,
     onPortSaved: (String) -> Unit,
+    onLocalPortSaved: (String) -> Unit,
     onProtocolSelect: (Int) -> Unit,
+    onLedSourceGameChange: (Boolean) -> Unit,
     onAccessCodeValueChange: (String) -> Unit,
     onAccessCodeToggleVisible: () -> Unit,
     onAccessCodeSave: () -> Unit,
@@ -57,6 +62,7 @@ fun ConnectionSection(
 ) {
     var tempIp by remember { mutableStateOf(initialIp) }
     var tempPort by remember { mutableStateOf(initialPort) }
+    var tempLocalPort by remember { mutableStateOf(initialLocalPort) }
     var isIpError by remember { mutableStateOf(false) }
     var isPortError by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
@@ -95,12 +101,41 @@ fun ConnectionSection(
         )
 
         OutlinedTextField(
+            value = tempLocalPort,
+            onValueChange = {
+                if (it.length <= 5 && it.all { c -> c.isDigit() }) {
+                    tempLocalPort = it
+                    val p = it.toIntOrNull()
+                    isPortError = p == null || p !in 1..65535
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (!focusState.isFocused && tempLocalPort.isNotEmpty() && !isPortError) {
+                        onLocalPortSaved(tempLocalPort)
+                    }
+                },
+            label = { Text("Local port") },
+            isError = isPortError,
+            singleLine = true,
+            shape = MaterialTheme.shapes.large,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (tempLocalPort.isNotEmpty() && !isPortError) onLocalPortSaved(tempLocalPort) else isPortError = true
+                    focusManager.clearFocus()
+                }
+            )
+        )
+
+        OutlinedTextField(
             value = tempPort,
             onValueChange = {
                 if (it.length <= 5 && it.all { c -> c.isDigit() }) {
                     tempPort = it
                     val p = it.toIntOrNull()
-                    isPortError = p == null || p !in 0..65535
+                    isPortError = p == null || p !in 1..65535
                 }
             },
             modifier = Modifier
@@ -137,6 +172,13 @@ fun ConnectionSection(
             ),
             selectedIndex = protocolType.coerceIn(0, 1),
             onSelect = onProtocolSelect
+        )
+
+        SettingToggleItem(
+            title = "Game LED",
+            subtitle = if (ledSourceGame) "Load LED from game" else "Use preset LED",
+            checked = ledSourceGame,
+            onToggle = onLedSourceGameChange
         )
 
         HorizontalDivider(

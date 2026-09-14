@@ -17,11 +17,11 @@ object JourBackend {
     }
 
     fun validatePort(port: String): Boolean {
-        return port.toIntOrNull()?.let { it in 0..65535 } ?: false
+        return port.toIntOrNull()?.let { it in 1..65535 } ?: false
     }
 
-    fun updateNetworkConfig(ip: String, port: Int, protocol: Int) {
-        Net.updateConfig(ip, port, protocol)
+    fun updateNetworkConfig(ip: String, port: Int, localPort: Int, protocol: Int) {
+        Net.updateConfig(ip, port, localPort, protocol)
     }
 
     fun sendGameState(

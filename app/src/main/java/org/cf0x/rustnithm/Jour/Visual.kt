@@ -31,6 +31,8 @@ fun JourVisual(
     connState: ConnState,
     activatedAir: Set<Int>,
     activatedSlide: Set<Int>,
+    serverSliderLed: ByteArray,
+    useServerLed: Boolean,
 
     backgroundUri: String?,
     percentPage: Float,
@@ -162,6 +164,8 @@ fun JourVisual(
             DefaultGameSkin(
                 activatedAir = activatedAir,
                 activatedSlide = activatedSlide,
+                serverSliderLed = serverSliderLed,
+                useServerLed = useServerLed,
                 airWeight = percentPage,
                 slideWeight = 1f - percentPage,
                 multiA = multiA,

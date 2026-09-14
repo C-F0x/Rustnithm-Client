@@ -57,8 +57,10 @@ fun Bon() {
     val enableVibration by config.enableVibration.collectAsState(initial = false)
     val accessCodes by config.accessCodes.collectAsState(initial = "")
     val sendFrequency by config.sendFrequency.collectAsState(initial = 500)
+    val ledSourceGame by config.ledSourceGame.collectAsState(initial = false)
     val targetIp by dataManager.targetIp.collectAsState()
     val targetPort by dataManager.targetPort.collectAsState()
+    val localPort by dataManager.localPort.collectAsState()
     val protocolType by dataManager.protocolType.collectAsState()
 
     val flickThreshold by config.flickThreshold.collectAsState(initial = 40)
@@ -145,10 +147,14 @@ fun Bon() {
 
         ipValue = targetIp,
         portValue = targetPort,
+        localPortValue = localPort,
         protocolType = protocolType,
+        ledSourceGame = ledSourceGame,
         onIpSaved = { dataManager.updateTargetIp(it) },
         onPortSaved = { dataManager.updateTargetPort(it) },
+        onLocalPortSaved = { dataManager.updateLocalPort(it) },
         onProtocolSelect = { dataManager.updateProtocolType(it) },
+        onLedSourceGameChange = { config.updateLedSourceGame(it) },
 
         onImportClick = { filePickerLauncher.launch(arrayOf("application/json", "image/*")) },
         onDeleteClick = { config.resetBackground() },

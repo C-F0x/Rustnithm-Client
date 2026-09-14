@@ -53,9 +53,11 @@ class DataManager(context: Context) : ViewModel() {
         val BACKGROUND_IMAGE_PATH = stringPreferencesKey("background_image_path")
         val TARGET_IP = stringPreferencesKey("target_ip")
         val TARGET_PORT = stringPreferencesKey("target_port")
+        val LOCAL_PORT = stringPreferencesKey("local_port")
         val ACCESS_CODES = stringPreferencesKey("access_codes")
         val SEND_FREQUENCY = intPreferencesKey("send_frequency")
         val PROTOCOL_TYPE = intPreferencesKey("protocol_type")
+        val LED_SOURCE_GAME = booleanPreferencesKey("led_source_game")
         val AIR_MODE = intPreferencesKey("air_mode")
         val FLICK_THRESHOLD = intPreferencesKey("flick_threshold")
         val FLICK_EQUALIZER_PLUS = intPreferencesKey("flick_equalizer_plus")
@@ -78,6 +80,8 @@ class DataManager(context: Context) : ViewModel() {
         const val DEFAULT_SEED_COLOR = 0xFF6750A4L
         const val DEFAULT_SEND_FREQUENCY = 500
         const val DEFAULT_PROTOCOL_TYPE = 0
+        const val DEFAULT_LED_SOURCE_GAME = false
+        const val DEFAULT_LOCAL_PORT = "37564"
         const val DEFAULT_AIR_MODE = 1
         const val DEFAULT_ACCESS_CODES = "12345678901234567890"
         const val DEFAULT_FLICK_THRESHOLD = 80
@@ -120,6 +124,10 @@ class DataManager(context: Context) : ViewModel() {
         .map { preferences -> preferences[PreferenceKeys.TARGET_PORT] ?: "" }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
+    val localPort: StateFlow<String> = dataStore.data
+        .map { preferences -> preferences[PreferenceKeys.LOCAL_PORT] ?: DEFAULT_LOCAL_PORT }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_LOCAL_PORT)
+
     val sendFrequency: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.SEND_FREQUENCY] ?: DEFAULT_SEND_FREQUENCY }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_SEND_FREQUENCY)
@@ -157,6 +165,9 @@ class DataManager(context: Context) : ViewModel() {
     val protocolType: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.PROTOCOL_TYPE] ?: DEFAULT_PROTOCOL_TYPE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_PROTOCOL_TYPE)
+    val ledSourceGame: StateFlow<Boolean> = dataStore.data
+        .map { preferences -> preferences[PreferenceKeys.LED_SOURCE_GAME] ?: DEFAULT_LED_SOURCE_GAME }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_LED_SOURCE_GAME)
     val airMode: StateFlow<Int> = dataStore.data
         .map { preferences -> preferences[PreferenceKeys.AIR_MODE] ?: DEFAULT_AIR_MODE }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DEFAULT_AIR_MODE)
@@ -237,6 +248,12 @@ class DataManager(context: Context) : ViewModel() {
     fun updateTargetPort(port: String) {
         viewModelScope.launch {
             dataStore.edit { it[PreferenceKeys.TARGET_PORT] = port }
+        }
+    }
+
+    fun updateLocalPort(port: String) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.LOCAL_PORT] = port }
         }
     }
 
@@ -324,6 +341,12 @@ class DataManager(context: Context) : ViewModel() {
     fun updateProtocolType(type: Int) {
         viewModelScope.launch {
             dataStore.edit { it[PreferenceKeys.PROTOCOL_TYPE] = type }
+        }
+    }
+
+    fun updateLedSourceGame(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.edit { it[PreferenceKeys.LED_SOURCE_GAME] = enabled }
         }
     }
 

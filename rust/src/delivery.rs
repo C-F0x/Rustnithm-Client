@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 use once_cell::sync::Lazy;
-use crate::{DATA_POOL, PROTOCOL_TYPE, STATE_VALUE};
+use crate::{DATA_POOL, PROTOCOL_TYPE, STATE_VALUE, PENDING_TOGGLE, TARGET_ADDR, SOCKET_HOLDER};
 
 pub(crate) static TCP_STREAM: Lazy<Mutex<Option<TcpStream>>> = Lazy::new(|| Mutex::new(None));
 
@@ -138,7 +138,7 @@ fn tcp_rx_loop() {
                         let frame = buf[2..2 + frame_len].to_vec();
                         buf.drain(..2 + frame_len);
 
-                        process_server_frame(&frame, STATE_VALUE.load(Ordering::Acquire));
+                        process_server_frame(&frame, STATE_VALUE.load(Ordering::Acquire), None);
                     }
                 }
             }
@@ -188,16 +188,17 @@ pub fn handle_sync_timeout() {
                 let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
                 STATE_VALUE.store(if target == 1 { 0 } else { 1 }, Ordering::SeqCst);
                 *guard = None;
+                if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
             }
         }
     }
 }
 
 fn handle_receive_udp(socket: &UdpSocket, current_state: u32) {
-    let mut recv_buf = [0u8; 2];
-    while let Ok((size, _)) = socket.recv_from(&mut recv_buf) {
-        if size == 2 {
-            process_server_frame(&recv_buf[..2], current_state);
+    let mut recv_buf = [0u8; 2048];
+    while let Ok((size, source)) = socket.recv_from(&mut recv_buf) {
+        if size > 0 {
+            process_server_frame(&recv_buf[..size], current_state, Some(source));
         }
     }
 }
@@ -266,7 +267,75 @@ fn send_packet_tcp(current_state: u32) {
     }
 }
 
-fn process_server_frame(frame: &[u8], current_state: u32) {
+fn process_server_frame(frame: &[u8], current_state: u32, source: Option<SocketAddr>) {
+    if let Some(actual) = source {
+        if let Ok(expected) = TARGET_ADDR.read() {
+            if let Some(expected) = *expected {
+                if expected != actual { return; }
+            }
+        }
+    }
+    if frame.len() >= 2 && (frame[0] & 0x40) != 0 {
+        let packet_type = (frame[0] >> 4) & 0x03;
+        if packet_type == 0x01 {
+            // Server slider LED frames contain 31 alternating zone/divider
+            // records of [R,G,B,Brightness]. Keep accepting the older
+            // 32-zone form, but reject malformed lengths before caching.
+            let payload = &frame[1..];
+            if payload.len() == 32 * 4 || payload.len() == 31 * 4 {
+                crate::set_server_slider_led(payload);
+            }
+            return;
+        }
+        if packet_type == 0x02 || packet_type == 0x03 {
+            // Tower and billboard are reserved for a later client phase.
+            return;
+        }
+    }
+    if frame.len() >= 8 && (frame[0] & 0x30) == 0 {
+        let opcode = frame[1];
+        let target = frame[2] != 0;
+        let request_id = u32::from_le_bytes([frame[3], frame[4], frame[5], frame[6]]);
+        let result = frame[7];
+        if opcode == 1 {
+            let current = STATE_VALUE.load(Ordering::Acquire);
+            let busy = PENDING_TOGGLE.lock().ok().map(|g| g.is_some()).unwrap_or(true);
+            let response = if busy {
+                if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
+                if let Ok(mut deadline) = DATA_POOL.sync_deadline.lock() { *deadline = None; }
+                if current == 2 { STATE_VALUE.store(if target { 0 } else { 1 }, Ordering::SeqCst); }
+                4
+            } else if current == target as u32 {
+                2
+            } else {
+                STATE_VALUE.store(target as u32, Ordering::SeqCst);
+                1
+            };
+            let packet = [0x40u8, 2, target as u8, frame[3], frame[4], frame[5], frame[6], response];
+            if PROTOCOL_TYPE.load(Ordering::Relaxed) == 1 {
+                if let Ok(mut guard) = TCP_STREAM.lock() { if let Some(stream) = guard.as_mut() { let len = (packet.len() as u16).to_le_bytes(); let _ = stream.write_all(&len); let _ = stream.write_all(&packet); } }
+            } else if let (Ok(addr), Ok(guard)) = (TARGET_ADDR.read(), SOCKET_HOLDER.read()) {
+                if let (Some(dest), Some(socket)) = (*addr, guard.as_ref()) { let _ = socket.send_to(&packet, dest); }
+            }
+            return;
+        }
+        if opcode == 2 {
+            if let Ok(mut pending) = PENDING_TOGGLE.lock() {
+                if let Some((id, target_state, _)) = *pending {
+                    if id == request_id {
+                        if result == 1 || result == 2 {
+                            STATE_VALUE.store(target_state as u32, Ordering::SeqCst);
+                        } else {
+                            STATE_VALUE.store(if target_state { 0 } else { 1 }, Ordering::SeqCst);
+                        }
+                        if let Ok(mut deadline) = DATA_POOL.sync_deadline.lock() { *deadline = None; }
+                        *pending = None;
+                    }
+                }
+            }
+            return;
+        }
+    }
     if frame.len() < 2 {
         return;
     }
@@ -305,8 +374,12 @@ fn build_packet(current_state: u32, is_tcp: bool) -> Option<([u8; 11], usize)> {
     let packet_len = match p_type {
         0 => {
             let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
-            buffer[1] = if target == 0 { 1 << 7 } else { (1 << 5) | (1 << 4) };
-            2
+            let request_id = PENDING_TOGGLE.lock().ok().and_then(|g| g.map(|v| v.0)).unwrap_or(0);
+            buffer[1] = 1;
+            buffer[2] = (target != 0) as u8;
+            buffer[3..7].copy_from_slice(&request_id.to_le_bytes());
+            buffer[7] = 0;
+            8
         }
         16 => {
             buffer[1] = DATA_POOL.button_mask.load(Ordering::Relaxed) as u8;
