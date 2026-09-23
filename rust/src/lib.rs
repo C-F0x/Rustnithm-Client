@@ -9,7 +9,7 @@ use std::net::{UdpSocket, SocketAddr, TcpStream, TcpListener};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 use once_cell::sync::Lazy;
 
 pub(crate) static STATE_VALUE: AtomicU32 = AtomicU32::new(0);
@@ -19,7 +19,7 @@ pub(crate) static INTERVAL_NS: AtomicU64 = AtomicU64::new(1_000_000);
 pub(crate) static TARGET_ADDR: RwLock<Option<SocketAddr>> = RwLock::new(None);
 pub(crate) static SOCKET_HOLDER: RwLock<Option<UdpSocket>> = RwLock::new(None);
 pub(crate) static TCP_LISTENER: RwLock<Option<TcpListener>> = RwLock::new(None);
-pub(crate) static PENDING_TOGGLE: Mutex<Option<(u32, bool, Instant)>> = Mutex::new(None);
+pub(crate) static SYNC_OUTBOX: Mutex<Option<(u32, bool, u8)>> = Mutex::new(None);
 
 pub(crate) struct NetData {
     pub packet_type: AtomicU32,
@@ -28,8 +28,6 @@ pub(crate) struct NetData {
     pub slider_mask: AtomicU32,
     pub handshake_storage: AtomicU32,
     pub card_bcd: Mutex<[u8; 10]>,
-    pub sync_deadline: Mutex<Option<Instant>>,
-    pub sync_target_state: AtomicU32,
     pub air_mode: AtomicU32,
     pub mickey: AtomicU32,
     pub flick_signal: AtomicU32,
@@ -43,8 +41,6 @@ pub(crate) static DATA_POOL: Lazy<Arc<NetData>> = Lazy::new(|| Arc::new(NetData 
     slider_mask: AtomicU32::new(0),
     handshake_storage: AtomicU32::new(0),
     card_bcd: Mutex::new([0u8; 10]),
-    sync_deadline: Mutex::new(None),
-    sync_target_state: AtomicU32::new(0),
     air_mode: AtomicU32::new(1),
     mickey: AtomicU32::new(0),
     flick_signal: AtomicU32::new(0),
@@ -88,7 +84,12 @@ loop {
                 .map(|g| g.is_some())
                 .unwrap_or(false);
             if !is_connected {
-                connect_tcp(addr);
+                // Prefer an inbound peer connection when the client is being
+                // launched by the server; otherwise establish the normal
+                // client-to-server connection.
+                if !accept_tcp_connection() {
+                    connect_tcp(addr);
+                }
                 thread::sleep(Duration::from_millis(500));
                 continue;
             }
@@ -103,17 +104,10 @@ loop {
                 delivery::handle_receive(socket, current_state);
             }
 
-            if current_state == 2 {
-                delivery::handle_sync_timeout();
-            }
-
             let interval = Duration::from_nanos(INTERVAL_NS.load(Ordering::Acquire));
             if last_tick.elapsed() >= interval {
                 last_tick = Instant::now();
-                let dummy_socket = SOCKET_HOLDER.read().unwrap();
-                if let Some(socket) = dummy_socket.as_ref() {
-                    delivery::send_packet(socket, &addr, current_state);
-                }
+                delivery::send_packet(None, &addr, current_state);
             }
         } else {
             thread::sleep(Duration::from_millis(50));
@@ -128,14 +122,10 @@ loop {
 
             delivery::handle_receive(socket, current_state);
 
-            if current_state == 2 {
-                delivery::handle_sync_timeout();
-            }
-
             let interval = Duration::from_nanos(INTERVAL_NS.load(Ordering::Acquire));
             if last_tick.elapsed() >= interval {
                 last_tick = Instant::now();
-                delivery::send_packet(socket, &addr, current_state);
+                delivery::send_packet(Some(socket), &addr, current_state);
             }
         } else {
             thread::sleep(Duration::from_millis(50));
@@ -200,6 +190,29 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeGetState(
     STATE_VALUE.load(Ordering::Acquire) as jint
 }
 
+fn accept_tcp_connection() -> bool {
+    let listener_guard = match TCP_LISTENER.read() {
+        Ok(guard) => guard,
+        Err(_) => return false,
+    };
+    let Some(listener) = listener_guard.as_ref() else {
+        return false;
+    };
+
+    match listener.accept() {
+        Ok((stream, _peer)) => {
+            let _ = stream.set_nodelay(true);
+            let _ = stream.set_nonblocking(true);
+            delivery::set_tcp_stream(Some(stream));
+            true
+        }
+        Err(ref error)
+            if error.kind() == std::io::ErrorKind::WouldBlock
+                || error.kind() == std::io::ErrorKind::TimedOut => false,
+        Err(_) => false,
+    }
+}
+
 #[no_mangle]
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeGetServerSliderLed(
     mut env: JNIEnv, _class: JClass,
@@ -222,18 +235,14 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
     let current = STATE_VALUE.load(Ordering::Acquire);
     let next = if current == 1 { 0 } else { 1 };
     if current == 2 {
-        // WAITING (sync in progress): the connect button means "disconnect".
-        // Cancel the sync instead of ignoring the tap, otherwise leaving the
-        // page mid-sync would never stop the engine.
-        if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
-            *guard = None;
-        }
-        if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
+        // Kept as a defensive recovery for an older in-memory state value.
         STATE_VALUE.store(0, Ordering::SeqCst);
         clear_server_led();
+        if let Ok(mut outbox) = SYNC_OUTBOX.lock() { *outbox = None; }
         return;
     }
     STATE_VALUE.store(next, Ordering::SeqCst);
+    if let Ok(mut outbox) = SYNC_OUTBOX.lock() { *outbox = None; }
     if next == 0 {
         clear_server_led();
     }
@@ -243,19 +252,13 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleClient(
 pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeToggleSync(
     _env: JNIEnv, _class: JClass,
 ) {
-    let current = STATE_VALUE.load(Ordering::Acquire);
-    if current == 2 { return; }
-    if PENDING_TOGGLE.lock().ok().map(|g| g.is_some()).unwrap_or(true) { return; }
-    let target = if current == 1 { 0 } else { 1 };
-    DATA_POOL.sync_target_state.store(target, Ordering::Relaxed);
-    let request_id = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u32;
-    if let Ok(mut pending) = PENDING_TOGGLE.lock() {
-        *pending = Some((request_id, target != 0, Instant::now() + Duration::from_millis(500)));
+    // Toggle Sync is server-authoritative.  The client keeps its handshake
+    // listener active in both SUSPEND and ACTIVE states, but it never emits a
+    // request that could change the server's state.  Clear any stale frame
+    // left by an older call so it cannot leak from the periodic send loop.
+    if let Ok(mut outbox) = SYNC_OUTBOX.lock() {
+        *outbox = None;
     }
-    if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
-        *guard = Some(Instant::now() + Duration::from_millis(500));
-    }
-    STATE_VALUE.store(2, Ordering::SeqCst);
 }
 
 #[no_mangle]
@@ -289,6 +292,7 @@ pub extern "system" fn Java_org_cf0x_rustnithm_Data_Net_nativeUpdateConfig(
     if let Ok(mut guard) = TCP_LISTENER.write() { *guard = None; }
     delivery::set_tcp_stream(None);
     clear_server_led();
+    if let Ok(mut outbox) = SYNC_OUTBOX.lock() { *outbox = None; }
 
     if let Ok(mut guard) = TARGET_ADDR.write() { *guard = Some(addr); }
     PROTOCOL_TYPE.store(protocol_type as u32, Ordering::SeqCst);

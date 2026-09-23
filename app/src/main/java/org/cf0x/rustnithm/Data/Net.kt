@@ -57,7 +57,7 @@ object Net {
         }
     }
 
-    /** @return raw engine state: 0 = suspended, 1 = active, 2 = waiting */
+    /** @return raw engine state: 0 = suspended, 1 = active */
     fun getState(): Int {
         loadLibrary()
         return nativeGetState()

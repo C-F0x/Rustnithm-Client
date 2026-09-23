@@ -4,9 +4,9 @@ use std::os::unix::io::{AsRawFd, RawFd};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use once_cell::sync::Lazy;
-use crate::{DATA_POOL, PROTOCOL_TYPE, STATE_VALUE, PENDING_TOGGLE, TARGET_ADDR, SOCKET_HOLDER};
+use crate::{DATA_POOL, PROTOCOL_TYPE, STATE_VALUE, SYNC_OUTBOX, TARGET_ADDR, SOCKET_HOLDER};
 
 pub(crate) static TCP_STREAM: Lazy<Mutex<Option<TcpStream>>> = Lazy::new(|| Mutex::new(None));
 
@@ -173,24 +173,11 @@ pub fn handle_receive(socket: &UdpSocket, current_state: u32) {
     handle_receive_udp(socket, current_state);
 }
 
-pub fn send_packet(socket: &UdpSocket, addr: &SocketAddr, current_state: u32) {
+pub fn send_packet(socket: Option<&UdpSocket>, addr: &SocketAddr, current_state: u32) {
     if PROTOCOL_TYPE.load(Ordering::Relaxed) == 1 {
         send_packet_tcp(current_state);
-    } else {
+    } else if let Some(socket) = socket {
         send_packet_udp(socket, addr, current_state);
-    }
-}
-
-pub fn handle_sync_timeout() {
-    if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
-        if let Some(deadline) = *guard {
-            if Instant::now() > deadline {
-                let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
-                STATE_VALUE.store(if target == 1 { 0 } else { 1 }, Ordering::SeqCst);
-                *guard = None;
-                if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
-            }
-        }
     }
 }
 
@@ -210,6 +197,12 @@ fn send_packet_udp(socket: &UdpSocket, addr: &SocketAddr, current_state: u32) {
 }
 
 fn send_packet_tcp(current_state: u32) {
+    // Do not consume a one-shot SyncState packet while the TCP connection is
+    // down; it will be emitted after the reconnect succeeds.
+    if TCP_STREAM.lock().map(|guard| guard.is_none()).unwrap_or(true) {
+        return;
+    }
+
     let Some((payload_buf, payload_len)) = build_packet(current_state, true) else {
         return;
     };
@@ -267,7 +260,7 @@ fn send_packet_tcp(current_state: u32) {
     }
 }
 
-fn process_server_frame(frame: &[u8], current_state: u32, source: Option<SocketAddr>) {
+fn process_server_frame(frame: &[u8], _current_state: u32, source: Option<SocketAddr>) {
     if let Some(actual) = source {
         if let Ok(expected) = TARGET_ADDR.read() {
             if let Some(expected) = *expected {
@@ -295,73 +288,48 @@ fn process_server_frame(frame: &[u8], current_state: u32, source: Option<SocketA
     if frame.len() >= 8 && (frame[0] & 0x30) == 0 {
         let opcode = frame[1];
         let target = frame[2] != 0;
-        let request_id = u32::from_le_bytes([frame[3], frame[4], frame[5], frame[6]]);
-        let result = frame[7];
-        if opcode == 1 {
-            let current = STATE_VALUE.load(Ordering::Acquire);
-            let busy = PENDING_TOGGLE.lock().ok().map(|g| g.is_some()).unwrap_or(true);
-            let response = if busy {
-                if let Ok(mut pending) = PENDING_TOGGLE.lock() { *pending = None; }
-                if let Ok(mut deadline) = DATA_POOL.sync_deadline.lock() { *deadline = None; }
-                if current == 2 { STATE_VALUE.store(if target { 0 } else { 1 }, Ordering::SeqCst); }
-                4
-            } else if current == target as u32 {
-                2
-            } else {
-                STATE_VALUE.store(target as u32, Ordering::SeqCst);
-                1
-            };
-            let packet = [0x40u8, 2, target as u8, frame[3], frame[4], frame[5], frame[6], response];
-            if PROTOCOL_TYPE.load(Ordering::Relaxed) == 1 {
-                if let Ok(mut guard) = TCP_STREAM.lock() { if let Some(stream) = guard.as_mut() { let len = (packet.len() as u16).to_le_bytes(); let _ = stream.write_all(&len); let _ = stream.write_all(&packet); } }
-            } else if let (Ok(addr), Ok(guard)) = (TARGET_ADDR.read(), SOCKET_HOLDER.read()) {
-                if let (Some(dest), Some(socket)) = (*addr, guard.as_ref()) { let _ = socket.send_to(&packet, dest); }
+        // Opcode 3 is the idempotent state-sync operation. Opcode 1 is
+        // accepted as the same operation for mixed-version peers, but is no
+        // longer answered with a response packet.
+        if opcode == 3 || opcode == 1 {
+            STATE_VALUE.store(target as u32, Ordering::SeqCst);
+            if !target {
+                crate::clear_server_led();
             }
-            return;
         }
-        if opcode == 2 {
-            if let Ok(mut pending) = PENDING_TOGGLE.lock() {
-                if let Some((id, target_state, _)) = *pending {
-                    if id == request_id {
-                        if result == 1 || result == 2 {
-                            STATE_VALUE.store(target_state as u32, Ordering::SeqCst);
-                        } else {
-                            STATE_VALUE.store(if target_state { 0 } else { 1 }, Ordering::SeqCst);
-                        }
-                        if let Ok(mut deadline) = DATA_POOL.sync_deadline.lock() { *deadline = None; }
-                        *pending = None;
-                    }
-                }
-            }
-            return;
-        }
+        // Legacy response packets have no meaning in the state-push model.
+        return;
     }
     if frame.len() < 2 {
         return;
     }
-    let header = frame[0];
-    let payload = frame[1];
-
-    if (header >> 6) & 1 == 1 && (header & 0x30) == 0 && current_state == 2 {
-        let server_confirm = (payload >> 4) & 1;
-        if (server_confirm as u32) == DATA_POOL.sync_target_state.load(Ordering::Relaxed) {
-            STATE_VALUE.store(server_confirm as u32, Ordering::SeqCst);
-            if let Ok(mut guard) = DATA_POOL.sync_deadline.lock() {
-                *guard = None;
-            }
-        }
-    }
 }
 
 fn build_packet(current_state: u32, is_tcp: bool) -> Option<([u8; 11], usize)> {
+    let mut buffer = [0u8; 11];
+    let protocol_bit = if is_tcp { 0x80u8 } else { 0x00u8 };
+
+    if let Ok(mut outbox) = SYNC_OUTBOX.lock() {
+        if let Some((request_id, target, remaining)) = *outbox {
+            buffer[0] = protocol_bit;
+            buffer[1] = 3;
+            buffer[2] = target as u8;
+            buffer[3..7].copy_from_slice(&request_id.to_le_bytes());
+            buffer[7] = 0;
+            if is_tcp || remaining <= 1 {
+                *outbox = None;
+            } else {
+                *outbox = Some((request_id, target, remaining - 1));
+            }
+            return Some((buffer, 8));
+        }
+    }
+
     let p_type = match current_state {
-        2 => 0,
         1 => DATA_POOL.packet_type.load(Ordering::Relaxed),
         _ => return None,
     };
 
-    let mut buffer = [0u8; 11];
-    let protocol_bit = if is_tcp { 0x80u8 } else { 0x00u8 };
     let type_bits: u8 = match p_type {
         0 => 0b00,
         16 => 0b01,
@@ -372,15 +340,6 @@ fn build_packet(current_state: u32, is_tcp: bool) -> Option<([u8; 11], usize)> {
     buffer[0] = protocol_bit | (type_bits << 4);
 
     let packet_len = match p_type {
-        0 => {
-            let target = DATA_POOL.sync_target_state.load(Ordering::Relaxed);
-            let request_id = PENDING_TOGGLE.lock().ok().and_then(|g| g.map(|v| v.0)).unwrap_or(0);
-            buffer[1] = 1;
-            buffer[2] = (target != 0) as u8;
-            buffer[3..7].copy_from_slice(&request_id.to_le_bytes());
-            buffer[7] = 0;
-            8
-        }
         16 => {
             buffer[1] = DATA_POOL.button_mask.load(Ordering::Relaxed) as u8;
             2
